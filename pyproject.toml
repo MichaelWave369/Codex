@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codex-consciousness-decoder"
+version = "0.1.0"
+description = "Deterministic symbolic analysis CLI for ancient wisdom traditions"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "CODEX contributors" }]
+dependencies = [
+  "typer>=0.12,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.6",
+]
+
+[project.scripts]
+codex = "codex.cli:app"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"codex.data.patterns" = ["*.json"]
+"codex.data.samples" = ["*.txt"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N"]
+ignore = ["B008"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]

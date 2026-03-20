@@ -1,0 +1,1 @@
+"""Pattern lexicon JSON resources."""
