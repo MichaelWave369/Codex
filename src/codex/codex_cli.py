@@ -56,27 +56,23 @@ import json
 import sys
 import textwrap
 from pathlib import Path
-from typing import List, Optional
 
-# ── Module imports ─────────────────────────────────────────────────────────────
-from codex_tiekat_engine import (
-    TIEKATPatternEngine,
-    PatternType,
-    PHI,
-    C_STAR,
-)
-from codex_filter import (
-    InstitutionalFilter,
-    LayerType,
-)
-from codex_comparator import (
+from codex.codex_comparator import (
     CodexComparator,
     MultiComparator,
 )
-from codex_visualizer import (
+from codex.codex_filter import (
+    InstitutionalFilter,
+    LayerType,
+)
+
+# ── Module imports ─────────────────────────────────────────────────────────────
+from codex.codex_tiekat_engine import (
+    PatternType,
+    TIEKATPatternEngine,
+)
+from codex.codex_visualizer import (
     CodexVisualizer,
-    visualize_text,
-    visualize_comparison,
 )
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -285,8 +281,8 @@ LAYER_EXPLANATIONS = {
     },
     "SOVEREIGN_VOICE": {
         "name": "Sovereign Voice (▲)",
-        "description": "First-person teaching authority from inner knowing — no institutional intermediary.",
-        "examples": ["'Seek and you shall find'", "'I tell you truly'", "Open invitation to all seekers"],
+        "description": "First-person teaching authority from inner knowing — no institutional intermediary.",  # noqa: E501
+        "examples": ["'Seek and you shall find'", "'I tell you truly'", "Open invitation to all seekers"],  # noqa: E501
     },
     "AUTHORITY_CLAIM": {
         "name": "Authority Claim (▼)",
@@ -300,30 +296,30 @@ LAYER_EXPLANATIONS = {
     },
     "EXCLUSIVITY_MARKER": {
         "name": "Exclusivity Marker (▼)",
-        "description": "Gatekeeping language — salvation only through specific institution or belief.",
+        "description": "Gatekeeping language — salvation only through specific institution or belief.",  # noqa: E501
         "examples": ["'Only through me/us'", "Heretic/infidel labels", "True believers vs. others"],
     },
     "DOCTRINAL_FORMULA": {
         "name": "Doctrinal Formula (▼)",
         "description": "Creedal belief assertions — propositional faith commanded externally.",
-        "examples": ["Council decrees", "Required belief statements", "Ritual requirements for salvation"],
+        "examples": ["Council decrees", "Required belief statements", "Ritual requirements for salvation"],  # noqa: E501
     },
     "TEMPORAL_POWER": {
         "name": "Temporal Power (▼)",
         "description": "Political/imperial authority in spiritual text context.",
-        "examples": ["Caesar/emperor compliance", "Divine right of rulers", "Political allegiance framing"],
+        "examples": ["Caesar/emperor compliance", "Divine right of rulers", "Political allegiance framing"],  # noqa: E501
     },
     "GENDER_ERASURE": {
         "name": "Gender Erasure (▼)",
         "description": "Systematic removal or suppression of feminine presence in transmission.",
-        "examples": ["Female silence commands", "Masculine-only spirit language", "Female authority prohibition"],
+        "examples": ["Female silence commands", "Masculine-only spirit language", "Female authority prohibition"],  # noqa: E501
     },
 }
 
 
 # ── Output helpers ─────────────────────────────────────────────────────────────
 
-def _write_output(content: str, output_path: Optional[str], fmt: str) -> None:
+def _write_output(content: str, output_path: str | None, fmt: str) -> None:
     if output_path:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         Path(output_path).write_text(content, encoding="utf-8")
@@ -617,7 +613,7 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
 
     # Pairwise comparison matrix
     if len(tiekat_reports) >= 2:
-        print(f"\n  Building convergence matrix...", file=sys.stderr)
+        print("\n  Building convergence matrix...", file=sys.stderr)
         multi = MultiComparator()
         matrix = multi.compare_many(tiekat_reports)
         print(matrix.render_ascii())
@@ -656,33 +652,33 @@ def cmd_explain(args: argparse.Namespace) -> int:
         if key in PATTERN_EXPLANATIONS:
             info = PATTERN_EXPLANATIONS[key]
             lines = [
-                f"",
+                "",
                 f"  {info['name']}",
                 f"  {'=' * len(info['name'])}",
                 f"  TIEKAT: {info['tiekat']}",
-                f"",
+                "",
                 f"  {info['description']}",
-                f"",
-                f"  Examples:",
+                "",
+                "  Examples:",
             ]
             for ex in info["examples"]:
                 lines.append(f"    ◆ {ex}")
             lines += [
-                f"",
-                f"  Interpretation:",
+                "",
+                "  Interpretation:",
                 f"    {info['interpretation']}",
-                f"",
+                "",
             ]
             print("\n".join(lines))
         elif key in LAYER_EXPLANATIONS:
             info = LAYER_EXPLANATIONS[key]
             lines = [
-                f"",
+                "",
                 f"  {info['name']}",
                 f"  {'=' * len(info['name'])}",
                 f"  {info['description']}",
-                f"",
-                f"  Examples:",
+                "",
+                "  Examples:",
             ]
             for ex in info["examples"]:
                 lines.append(f"    ◆ {ex}")
@@ -690,7 +686,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
             print("\n".join(lines))
         else:
             print(f"\n  Unknown pattern/layer: {args.pattern}")
-            print(f"  Use: codex explain --list to see all available\n")
+            print("  Use: codex explain --list to see all available\n")
             return 1
 
     elif args.module:
@@ -756,7 +752,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
             print(f"\n{info}\n")
         else:
             print(f"\n  Unknown module: {args.module}")
-            print(f"  Available: filter, patterns, comparator, visualizer\n")
+            print("  Available: filter, patterns, comparator, visualizer\n")
             return 1
 
     elif getattr(args, "list", False):
@@ -873,7 +869,7 @@ def build_parser() -> argparse.ArgumentParser:
     def add_tradition(p: argparse.ArgumentParser, flag: str = "--tradition") -> None:
         p.add_argument(flag, "-t", default="generic",
                        choices=list(TRADITIONS.keys()),
-                       help=f"Text tradition (default: generic)")
+                       help="Text tradition (default: generic)")
 
     # ── analyze ──────────────────────────────────────────────────────────────
     p_analyze = sub.add_parser(
