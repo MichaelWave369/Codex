@@ -46,18 +46,19 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Optional
 
-from codex.codex_comparator import (
-    ComparisonReport,
+from codex_tiekat_engine import (
+    CodexTIEKATReport,
+    PatternType,
+    C_STAR,
 )
-from codex.codex_filter import (
+from codex_filter import (
     FilterReport,
     LayerType,
 )
-from codex.codex_tiekat_engine import (
-    C_STAR,
-    CodexTIEKATReport,
-    PatternType,
+from codex_comparator import (
+    ComparisonReport,
 )
 
 # ── Design constants ──────────────────────────────────────────────────────────
@@ -119,7 +120,7 @@ def _html_shell(title: str, body: str, extra_scripts: str = "") -> str:
 <title>{title}</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap');  # noqa: E501
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400&display=swap');
   *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
   :root {{
     --bg:     {DARK_BG};
@@ -156,58 +157,58 @@ def _html_shell(title: str, body: str, extra_scripts: str = "") -> str:
       linear-gradient(90deg, rgba(200,169,126,.015) 1px, transparent 1px);
     background-size: 61.8px 61.8px;
   }}
-  #app {{ position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }}  # noqa: E501
+  #app {{ position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }}
 
   /* Header */
-  .codex-header {{ text-align: center; padding: 48px 0 40px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }}  # noqa: E501
-  .codex-sigil {{ font-size: 2.4rem; color: var(--gold); letter-spacing: .3em; opacity: .7; margin-bottom: 12px; animation: breathe 3.618s ease-in-out infinite; }}  # noqa: E501
+  .codex-header {{ text-align: center; padding: 48px 0 40px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }}
+  .codex-sigil {{ font-size: 2.4rem; color: var(--gold); letter-spacing: .3em; opacity: .7; margin-bottom: 12px; animation: breathe 3.618s ease-in-out infinite; }}
   @keyframes breathe {{ 0%,100%{{ opacity:.5 }} 50%{{ opacity:.9 }} }}
   .codex-title {{ font-size: 2.2rem; font-weight: 300; color: var(--text); letter-spacing: .06em; }}
-  .codex-subtitle {{ font-family: 'JetBrains Mono', monospace; font-size: .58rem; color: var(--muted); letter-spacing: .18em; text-transform: uppercase; margin-top: 8px; }}  # noqa: E501
-  .codex-meta {{ font-family: 'JetBrains Mono', monospace; font-size: .52rem; color: var(--gold); opacity: .5; margin-top: 6px; letter-spacing: .1em; }}  # noqa: E501
+  .codex-subtitle {{ font-family: 'JetBrains Mono', monospace; font-size: .58rem; color: var(--muted); letter-spacing: .18em; text-transform: uppercase; margin-top: 8px; }}
+  .codex-meta {{ font-family: 'JetBrains Mono', monospace; font-size: .52rem; color: var(--gold); opacity: .5; margin-top: 6px; letter-spacing: .1em; }}
 
   /* Section */
   .section {{ margin-bottom: 56px; }}
   .section-head {{ display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }}
-  .section-num {{ font-family: 'JetBrains Mono', monospace; font-size: .58rem; color: var(--gold); opacity: .5; letter-spacing: .15em; }}  # noqa: E501
-  .section-title {{ font-size: 1.4rem; font-weight: 300; color: var(--gold); letter-spacing: .06em; }}  # noqa: E501
+  .section-num {{ font-family: 'JetBrains Mono', monospace; font-size: .58rem; color: var(--gold); opacity: .5; letter-spacing: .15em; }}
+  .section-title {{ font-size: 1.4rem; font-weight: 300; color: var(--gold); letter-spacing: .06em; }}
   .section-line {{ flex: 1; height: 1px; background: var(--border); }}
 
   /* Panel */
-  .panel {{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 16px; }}  # noqa: E501
-  .panel-label {{ font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--gold); letter-spacing: .18em; text-transform: uppercase; margin-bottom: 12px; opacity: .6; }}  # noqa: E501
+  .panel {{ background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 16px; }}
+  .panel-label {{ font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--gold); letter-spacing: .18em; text-transform: uppercase; margin-bottom: 12px; opacity: .6; }}
 
   /* Stat grid */
-  .stat-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }}  # noqa: E501
-  .stat {{ background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; }}  # noqa: E501
+  .stat-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }}
+  .stat {{ background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; }}
   .stat-val {{ font-size: 1.6rem; font-weight: 300; color: var(--gold); line-height: 1; }}
-  .stat-label {{ font-family: 'JetBrains Mono', monospace; font-size: .48rem; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; }}  # noqa: E501
+  .stat-label {{ font-family: 'JetBrains Mono', monospace; font-size: .48rem; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; }}
 
   /* Coherence bar */
-  .passage-bar {{ display: flex; align-items: center; gap: 10px; margin-bottom: 6px; cursor: pointer; padding: 5px 8px; border-radius: 4px; transition: background .15s; }}  # noqa: E501
+  .passage-bar {{ display: flex; align-items: center; gap: 10px; margin-bottom: 6px; cursor: pointer; padding: 5px 8px; border-radius: 4px; transition: background .15s; }}
   .passage-bar:hover {{ background: rgba(200,169,126,.05); }}
-  .passage-idx {{ font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--muted); width: 28px; flex-shrink: 0; }}  # noqa: E501
-  .bar-track {{ flex: 1; height: 8px; background: rgba(255,255,255,.05); border-radius: 4px; overflow: hidden; }}  # noqa: E501
+  .passage-idx {{ font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--muted); width: 28px; flex-shrink: 0; }}
+  .bar-track {{ flex: 1; height: 8px; background: rgba(255,255,255,.05); border-radius: 4px; overflow: hidden; }}
   .bar-fill {{ height: 100%; border-radius: 4px; transition: width .3s; }}
-  .bar-score {{ font-family: 'JetBrains Mono', monospace; font-size: .48rem; color: var(--dim); width: 36px; text-align: right; flex-shrink: 0; }}  # noqa: E501
-  .bar-level {{ font-family: 'JetBrains Mono', monospace; font-size: .44rem; color: var(--muted); width: 80px; flex-shrink: 0; }}  # noqa: E501
-  .seam-marker {{ font-family: 'JetBrains Mono', monospace; font-size: .44rem; color: #E85060; padding: 0 6px; flex-shrink: 0; }}  # noqa: E501
+  .bar-score {{ font-family: 'JetBrains Mono', monospace; font-size: .48rem; color: var(--dim); width: 36px; text-align: right; flex-shrink: 0; }}
+  .bar-level {{ font-family: 'JetBrains Mono', monospace; font-size: .44rem; color: var(--muted); width: 80px; flex-shrink: 0; }}
+  .seam-marker {{ font-family: 'JetBrains Mono', monospace; font-size: .44rem; color: #E85060; padding: 0 6px; flex-shrink: 0; }}
 
   /* Passage detail */
-  .passage-detail {{ display: none; background: rgba(7,7,15,.8); border: 1px solid rgba(200,169,126,.08); border-radius: 4px; padding: 12px 16px; margin: -2px 0 8px 36px; font-size: .88rem; color: var(--dim); line-height: 1.7; }}  # noqa: E501
+  .passage-detail {{ display: none; background: rgba(7,7,15,.8); border: 1px solid rgba(200,169,126,.08); border-radius: 4px; padding: 12px 16px; margin: -2px 0 8px 36px; font-size: .88rem; color: var(--dim); line-height: 1.7; }}
   .passage-detail.open {{ display: block; }}
   .passage-hits {{ display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }}
-  .hit-chip {{ font-family: 'JetBrains Mono', monospace; font-size: .44rem; padding: 2px 7px; border-radius: 10px; border: 1px solid; }}  # noqa: E501
+  .hit-chip {{ font-family: 'JetBrains Mono', monospace; font-size: .44rem; padding: 2px 7px; border-radius: 10px; border: 1px solid; }}
 
   /* Seam card */
-  .seam-card {{ border-left: 3px solid #E85060; padding: 14px 16px; margin-bottom: 10px; background: rgba(232,80,96,.04); border-radius: 0 6px 6px 0; }}  # noqa: E501
-  .seam-id {{ font-family: 'JetBrains Mono', monospace; font-size: .52rem; color: #E85060; margin-bottom: 4px; }}  # noqa: E501
+  .seam-card {{ border-left: 3px solid #E85060; padding: 14px 16px; margin-bottom: 10px; background: rgba(232,80,96,.04); border-radius: 0 6px 6px 0; }}
+  .seam-id {{ font-family: 'JetBrains Mono', monospace; font-size: .52rem; color: #E85060; margin-bottom: 4px; }}
   .seam-body {{ font-size: .9rem; color: var(--dim); line-height: 1.6; }}
-  .seam-ref {{ font-family: 'JetBrains Mono', monospace; font-size: .44rem; color: var(--muted); margin-top: 6px; font-style: italic; }}  # noqa: E501
+  .seam-ref {{ font-family: 'JetBrains Mono', monospace; font-size: .44rem; color: var(--muted); margin-top: 6px; font-style: italic; }}
 
   /* Pattern pills */
   .pattern-grid {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-  .pattern-pill {{ display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 16px; border: 1px solid; font-family: 'JetBrains Mono', monospace; font-size: .5rem; letter-spacing: .05em; }}  # noqa: E501
+  .pattern-pill {{ display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 16px; border: 1px solid; font-family: 'JetBrains Mono', monospace; font-size: .5rem; letter-spacing: .05em; }}
   .pattern-dot {{ width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }}
 
   /* Canvas containers */
@@ -215,17 +216,17 @@ def _html_shell(title: str, body: str, extra_scripts: str = "") -> str:
   .chart-wrap-sm {{ position: relative; height: 240px; }}
 
   /* Convergence matrix */
-  .matrix-table {{ width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: .52rem; }}  # noqa: E501
-  .matrix-table th, .matrix-table td {{ padding: 8px 12px; border: 1px solid var(--border); text-align: center; }}  # noqa: E501
+  .matrix-table {{ width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: .52rem; }}
+  .matrix-table th, .matrix-table td {{ padding: 8px 12px; border: 1px solid var(--border); text-align: center; }}
   .matrix-table th {{ color: var(--gold); font-weight: 400; background: rgba(200,169,126,.04); }}
   .matrix-cell {{ border-radius: 4px; padding: 4px 8px; display: inline-block; min-width: 60px; }}
 
   /* Signal/filter legend */
-  .layer-row {{ display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(200,169,126,.05); }}  # noqa: E501
+  .layer-row {{ display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(200,169,126,.05); }}
   .layer-dot {{ width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }}
-  .layer-name {{ font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--dim); flex: 1; }}  # noqa: E501
-  .layer-count {{ font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--gold); width: 30px; text-align: right; }}  # noqa: E501
-  .layer-bar-mini {{ flex: 2; height: 4px; background: rgba(255,255,255,.05); border-radius: 2px; overflow: hidden; }}  # noqa: E501
+  .layer-name {{ font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--dim); flex: 1; }}
+  .layer-count {{ font-family: 'JetBrains Mono', monospace; font-size: .5rem; color: var(--gold); width: 30px; text-align: right; }}
+  .layer-bar-mini {{ flex: 2; height: 4px; background: rgba(255,255,255,.05); border-radius: 2px; overflow: hidden; }}
   .layer-bar-fill {{ height: 100%; border-radius: 2px; }}
 
   /* Two columns */
@@ -233,14 +234,14 @@ def _html_shell(title: str, body: str, extra_scripts: str = "") -> str:
   @media(max-width: 700px) {{ .two-col {{ grid-template-columns: 1fr; }} }}
 
   /* Disclaimer */
-  .disclaimer {{ font-family: 'JetBrains Mono', monospace; font-size: .46rem; color: var(--muted); line-height: 1.8; padding: 16px; border: 1px solid var(--border); border-radius: 4px; margin-top: 48px; }}  # noqa: E501
+  .disclaimer {{ font-family: 'JetBrains Mono', monospace; font-size: .46rem; color: var(--muted); line-height: 1.8; padding: 16px; border: 1px solid var(--border); border-radius: 4px; margin-top: 48px; }}
 
   /* Footer */
-  .codex-footer {{ text-align: center; padding: 40px 0 0; border-top: 1px solid var(--border); margin-top: 48px; }}  # noqa: E501
+  .codex-footer {{ text-align: center; padding: 40px 0 0; border-top: 1px solid var(--border); margin-top: 48px; }}
   .footer-sigil {{ font-size: 1.4rem; color: var(--gold); opacity: .4; letter-spacing: .3em; }}
-  .footer-text {{ font-family: 'JetBrains Mono', monospace; font-size: .46rem; color: var(--muted); letter-spacing: .12em; margin-top: 8px; }}  # noqa: E501
+  .footer-text {{ font-family: 'JetBrains Mono', monospace; font-size: .46rem; color: var(--muted); letter-spacing: .12em; margin-top: 8px; }}
 
-  ::-webkit-scrollbar {{ width: 4px; }} ::-webkit-scrollbar-track {{ background: transparent; }} ::-webkit-scrollbar-thumb {{ background: rgba(200,169,126,.1); border-radius: 2px; }}  # noqa: E501
+  ::-webkit-scrollbar {{ width: 4px; }} ::-webkit-scrollbar-track {{ background: transparent; }} ::-webkit-scrollbar-thumb {{ background: rgba(200,169,126,.1); border-radius: 2px; }}
 </style>
 </head>
 <body>
@@ -281,10 +282,14 @@ def _coherence_color(score: float) -> str:
 
 
 def _level_label(score: float) -> str:
-    if score >= 0.85: return "PURE SIGNAL"
-    if score >= 0.65: return "STRONG"
-    if score >= 0.40: return "MIXED"
-    if score >= 0.20: return "FILTERED"
+    if score >= 0.85:
+        return "PURE SIGNAL"
+    if score >= 0.65:
+        return "STRONG"
+    if score >= 0.40:
+        return "MIXED"
+    if score >= 0.20:
+        return "FILTERED"
     return "INSTITUTIONAL"
 
 
@@ -293,16 +298,11 @@ def _level_label(score: float) -> str:
 def _coherence_heatmap(report: FilterReport) -> str:
     seam_indices = {s.passage_after for s in report.editorial_seams}
 
-    max_hits = max(
-        (p.signal_hits + p.filter_hits for p in report.passages),
-        default=1
-    ) or 1
-
     rows = []
     for p in report.passages:
         color    = _coherence_color(p.coherence_score)
         pct      = int(p.coherence_score * 100)
-        seam_mk  = '<span class="seam-marker">⚠ SEAM</span>' if p.passage_index in seam_indices else ""  # noqa: E501
+        seam_mk  = '<span class="seam-marker">⚠ SEAM</span>' if p.passage_index in seam_indices else ""
         preview  = p.passage_text[:90].replace("<", "&lt;").replace(">", "&gt;")
         level    = _level_label(p.coherence_score)
 
@@ -318,7 +318,7 @@ def _coherence_heatmap(report: FilterReport) -> str:
                 f'<span class="hit-chip" style="color:{c};border-color:{c}22;background:{c}11">'
                 f'{"▲" if is_signal else "▼"} {lt.value.replace("_"," ")} ×{count}</span>'
             )
-        chips_html = "\n".join(chips) if chips else '<span style="color:var(--muted);font-size:.44rem;font-family:\'JetBrains Mono\',monospace">no pattern hits</span>'  # noqa: E501
+        chips_html = "\n".join(chips) if chips else '<span style="color:var(--muted);font-size:.44rem;font-family:\'JetBrains Mono\',monospace">no pattern hits</span>'
 
         detail_id = f"detail-{p.passage_index}"
         rows.append(f"""
@@ -332,16 +332,16 @@ def _coherence_heatmap(report: FilterReport) -> str:
   {seam_mk}
 </div>
 <div class="passage-detail" id="{detail_id}">
-  <div style="color:var(--text);margin-bottom:8px;font-style:italic">{preview}{"..." if len(p.passage_text) > 90 else ""}</div>  # noqa: E501
-  <div style="font-family:\'JetBrains Mono\',monospace;font-size:.46rem;color:var(--gold);margin-bottom:6px">{p.recovery_note}</div>  # noqa: E501
+  <div style="color:var(--text);margin-bottom:8px;font-style:italic">{preview}{"..." if len(p.passage_text) > 90 else ""}</div>
+  <div style="font-family:\'JetBrains Mono\',monospace;font-size:.46rem;color:var(--gold);margin-bottom:6px">{p.recovery_note}</div>
   <div class="passage-hits">{chips_html}</div>
 </div>""")
 
     # Overall stats
     map_ = report.recovery_map
     stats = f"""<div class="stat-grid">
-  {_stat(f"{report.overall_coherence:.3f}", "Overall Coherence", _coherence_color(report.overall_coherence))}  # noqa: E501
-  {_stat(report.coherence_level.value.replace("_"," "), "Coherence Level", _coherence_color(report.overall_coherence))}  # noqa: E501
+  {_stat(f"{report.overall_coherence:.3f}", "Overall Coherence", _coherence_color(report.overall_coherence))}
+  {_stat(report.coherence_level.value.replace("_"," "), "Coherence Level", _coherence_color(report.overall_coherence))}
   {_stat(str(report.signal_total), "Signal Hits", TEAL)}
   {_stat(str(report.filter_total), "Filter Hits", "#E85060")}
   {_stat(f"{map_.overall_signal_ratio:.0%}", "Signal Ratio", TEAL)}
@@ -360,7 +360,7 @@ def _coherence_heatmap(report: FilterReport) -> str:
 
 def _seams_section(report: FilterReport) -> str:
     if not report.editorial_seams:
-        return '<div class="panel"><div class="panel-label">No editorial seams detected at current thresholds.</div></div>'  # noqa: E501
+        return '<div class="panel"><div class="panel-label">No editorial seams detected at current thresholds.</div></div>'
 
     cards = []
     for s in report.editorial_seams:
@@ -368,22 +368,22 @@ def _seams_section(report: FilterReport) -> str:
         filters_str = ", ".join(s.filter_layers) or "none"
         signals_str = ", ".join(s.signal_layers) or "none"
         evid = s.evidence[0][:200].replace("<", "&lt;").replace(">", "&gt;") if s.evidence else ""
-        evid2 = s.evidence[1][:200].replace("<", "&lt;").replace(">", "&gt;") if len(s.evidence) > 1 else ""  # noqa: E501
+        evid2 = s.evidence[1][:200].replace("<", "&lt;").replace(">", "&gt;") if len(s.evidence) > 1 else ""
         drop_dir = "↓" if s.coherence_drop > 0 else "↑"
         cards.append(f"""<div class="seam-card">
   <div class="seam-id">{s.seam_id}
     <span style="color:{conf_color};margin-left:10px">{s.confidence.value} CONFIDENCE</span>
-    <span style="color:var(--muted);margin-left:10px">Passages {s.passage_before}→{s.passage_after}  {drop_dir}{abs(s.coherence_drop):.3f}</span>  # noqa: E501
+    <span style="color:var(--muted);margin-left:10px">Passages {s.passage_before}→{s.passage_after}  {drop_dir}{abs(s.coherence_drop):.3f}</span>
   </div>
   <div class="seam-body" style="margin:8px 0">{s.interpretation[:250]}</div>
-  <div style="font-family:\'JetBrains Mono\',monospace;font-size:.46rem;color:var(--muted);margin-bottom:4px">  # noqa: E501
+  <div style="font-family:\'JetBrains Mono\',monospace;font-size:.46rem;color:var(--muted);margin-bottom:4px">
     Filter layers: <span style="color:#E85060">{filters_str}</span> &nbsp;|&nbsp;
     Signal lost: <span style="color:{TEAL}">{signals_str}</span>
   </div>
-  <div style="font-size:.82rem;color:var(--muted);font-style:italic;margin:8px 0;border-left:2px solid var(--border);padding-left:10px">  # noqa: E501
+  <div style="font-size:.82rem;color:var(--muted);font-style:italic;margin:8px 0;border-left:2px solid var(--border);padding-left:10px">
     {evid}
   </div>
-  <div style="font-size:.82rem;color:var(--dim);font-style:italic;margin-bottom:8px;border-left:2px solid #E8506044;padding-left:10px">  # noqa: E501
+  <div style="font-size:.82rem;color:var(--dim);font-style:italic;margin-bottom:8px;border-left:2px solid #E8506044;padding-left:10px">
     {evid2}
   </div>
   <div class="seam-ref">{s.scholarly_parallel[:180]}</div>
@@ -434,7 +434,7 @@ def _pattern_radar(report: CodexTIEKATReport, canvas_id: str = "radarChart") -> 
   </div>
   <div class="panel">
     <div class="panel-label">Pattern Types Detected</div>
-    <div class="pattern-grid">{"".join(pills) or '<span style="color:var(--muted);font-family:\'JetBrains Mono\',monospace;font-size:.5rem">No patterns detected</span>'}</div>  # noqa: E501
+    <div class="pattern-grid">{"".join(pills) or '<span style="color:var(--muted);font-family:\'JetBrains Mono\',monospace;font-size:.5rem">No patterns detected</span>'}</div>
     <div style="margin-top:20px">
       {_stat(f"{report.epsilon_density*1000:.2f}", "ε Signal / 1k words", TEAL)}
       {_stat(f"{report.c_star_density*1000:.2f}", "C* Attractor / 1k words", GOLD)}
@@ -495,9 +495,9 @@ def _layer_breakdown(report: FilterReport) -> str:
         pct = int(count / max_count * 100)
         rows.append(f"""<div class="layer-row">
   <div class="layer-dot" style="background:{c}"></div>
-  <span style="font-family:'JetBrains Mono',monospace;font-size:.44rem;color:{'var(--teal)' if is_signal else '#E85060'}">{marker}</span>  # noqa: E501
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.44rem;color:{'var(--teal)' if is_signal else '#E85060'}">{marker}</span>
   <span class="layer-name">{lt.value.replace("_"," ")}</span>
-  <div class="layer-bar-mini"><div class="layer-bar-fill" style="width:{pct}%;background:{c}"></div></div>  # noqa: E501
+  <div class="layer-bar-mini"><div class="layer-bar-fill" style="width:{pct}%;background:{c}"></div></div>
   <span class="layer-count">{count}</span>
 </div>""")
 
@@ -539,15 +539,15 @@ def _convergence_section(comp: ComparisonReport, canvas_id: str = "convChart") -
         c = PATTERN_COLORS.get(sig.pattern_type.value, GOLD)
         ev_a = sig.evidence_a[:150].replace("<","&lt;").replace(">","&gt;")
         ev_b = sig.evidence_b[:150].replace("<","&lt;").replace(">","&gt;")
-        sig_html += f"""<div style="border-left:3px solid {c};padding:12px 16px;margin-bottom:10px;background:{c}08;border-radius:0 6px 6px 0">  # noqa: E501
-  <div style="font-family:'JetBrains Mono',monospace;font-size:.48rem;color:{c};margin-bottom:6px">{sig.pattern_type.value} · convergence={sig.convergence_score:.3f}</div>  # noqa: E501
-  <div style="font-size:.85rem;color:var(--dim);margin-bottom:4px;font-style:italic">[{comp.tradition_a}] {ev_a}</div>  # noqa: E501
-  <div style="font-size:.85rem;color:var(--text);font-style:italic">[{comp.tradition_b}] {ev_b}</div>  # noqa: E501
+        sig_html += f"""<div style="border-left:3px solid {c};padding:12px 16px;margin-bottom:10px;background:{c}08;border-radius:0 6px 6px 0">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:.48rem;color:{c};margin-bottom:6px">{sig.pattern_type.value} · convergence={sig.convergence_score:.3f}</div>
+  <div style="font-size:.85rem;color:var(--dim);margin-bottom:4px;font-style:italic">[{comp.tradition_a}] {ev_a}</div>
+  <div style="font-size:.85rem;color:var(--text);font-style:italic">[{comp.tradition_b}] {ev_b}</div>
 </div>"""
 
     top_principles_html = ""
     for i, p in enumerate(comp.top_tiekat_principles[:4], 1):
-        top_principles_html += f'<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:.88rem;color:var(--dim)"><span style="color:var(--gold);font-family:\'JetBrains Mono\',monospace;font-size:.48rem;margin-right:10px">{i}.</span>{p}</div>'  # noqa: E501
+        top_principles_html += f'<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:.88rem;color:var(--dim)"><span style="color:var(--gold);font-family:\'JetBrains Mono\',monospace;font-size:.48rem;margin-right:10px">{i}.</span>{p}</div>'
 
     chart_html = f"""<div class="panel">
   <div class="panel-label">Pattern Density Comparison (per 1000 words)</div>
@@ -585,11 +585,11 @@ def _convergence_section(comp: ComparisonReport, canvas_id: str = "convChart") -
     options: {{
       responsive: true, maintainAspectRatio: false,
       plugins: {{
-        legend: {{ labels: {{ color: '{TEXT_DIM}', font: {{ family: "'JetBrains Mono'", size: 10 }} }} }},  # noqa: E501
+        legend: {{ labels: {{ color: '{TEXT_DIM}', font: {{ family: "'JetBrains Mono'", size: 10 }} }} }},
       }},
       scales: {{
-        x: {{ ticks: {{ color: '{TEXT_DIM}', font: {{ family: "'JetBrains Mono'", size: 9 }} }}, grid: {{ color: 'rgba(200,169,126,0.06)' }} }},  # noqa: E501
-        y: {{ ticks: {{ color: '{TEXT_DIM}', font: {{ family: "'JetBrains Mono'", size: 9 }} }}, grid: {{ color: 'rgba(200,169,126,0.06)' }} }},  # noqa: E501
+        x: {{ ticks: {{ color: '{TEXT_DIM}', font: {{ family: "'JetBrains Mono'", size: 9 }} }}, grid: {{ color: 'rgba(200,169,126,0.06)' }} }},
+        y: {{ ticks: {{ color: '{TEXT_DIM}', font: {{ family: "'JetBrains Mono'", size: 9 }} }}, grid: {{ color: 'rgba(200,169,126,0.06)' }} }},
       }}
     }}
   }});
@@ -601,11 +601,11 @@ def _convergence_section(comp: ComparisonReport, canvas_id: str = "convChart") -
   <div>
     <div class="panel" style="margin-bottom:14px">
       <div class="panel-label">Top Corroborated TIEKAT Principles</div>
-      {top_principles_html or '<span style="color:var(--muted);font-size:.5rem;font-family:\'JetBrains Mono\',monospace">None identified</span>'}  # noqa: E501
+      {top_principles_html or '<span style="color:var(--muted);font-size:.5rem;font-family:\'JetBrains Mono\',monospace">None identified</span>'}
     </div>
     <div class="panel">
       <div class="panel-label">Shared Signal Passages</div>
-      {sig_html or '<span style="color:var(--muted);font-size:.5rem;font-family:\'JetBrains Mono\',monospace">No shared signals above threshold</span>'}  # noqa: E501
+      {sig_html or '<span style="color:var(--muted);font-size:.5rem;font-family:\'JetBrains Mono\',monospace">No shared signals above threshold</span>'}
     </div>
   </div>
 </div>"""
@@ -671,9 +671,9 @@ class CodexVisualizer:
 
     def full_dashboard(
         self,
-        filter_report: FilterReport | None    = None,
-        tiekat_report: CodexTIEKATReport | None = None,
-        comparison_report: ComparisonReport | None = None,
+        filter_report: Optional[FilterReport]    = None,
+        tiekat_report: Optional[CodexTIEKATReport] = None,
+        comparison_report: Optional[ComparisonReport] = None,
         title: str = "CODEX Analysis Dashboard",
         source_label: str = "",
     ) -> str:
@@ -694,7 +694,7 @@ class CodexVisualizer:
   <div class="codex-sigil">Φ∴⊙</div>
   <div class="codex-title">{title}</div>
   <div class="codex-subtitle">{tradition}{"  ◆  " + source if source else ""}</div>
-  <div class="codex-meta">PHI369 Labs / Parallax  ◆  C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369</div>  # noqa: E501
+  <div class="codex-meta">PHI369 Labs / Parallax  ◆  C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369</div>
 </div>"""
 
         sections = [header]
@@ -729,7 +729,7 @@ class CodexVisualizer:
 
         if comparison_report:
             sections.append(_section(
-                f"{sec_num}.", f"Cross-Tradition Convergence: {comparison_report.tradition_a} vs {comparison_report.tradition_b}",  # noqa: E501
+                f"{sec_num}.", f"Cross-Tradition Convergence: {comparison_report.tradition_a} vs {comparison_report.tradition_b}",
                 _convergence_section(comparison_report, f"convChart{sec_num}")
             ))
             sec_num += 1
@@ -737,7 +737,7 @@ class CodexVisualizer:
         # Disclaimer
         disclaimer_text = (
             filter_report.disclaimer if filter_report else
-            "These findings are hypothesis seeds for further research and do not constitute doctrinal claims, historical proofs, or authoritative interpretations."  # noqa: E501
+            "These findings are hypothesis seeds for further research and do not constitute doctrinal claims, historical proofs, or authoritative interpretations."
         )
         sections.append(f'<div class="disclaimer">{disclaimer_text}</div>')
         sections.append(self._footer())
@@ -748,8 +748,8 @@ class CodexVisualizer:
     def _footer(self) -> str:
         return f"""<div class="codex-footer">
   <div class="footer-sigil">Φ∴⊙</div>
-  <div class="footer-text">PHI369 Labs / Parallax  ◆  CODEX Project  ◆  TIEKAT v64.0.0 Sovereign Substrate Weave</div>  # noqa: E501
-  <div class="footer-text" style="margin-top:4px">C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369</div>  # noqa: E501
+  <div class="footer-text">PHI369 Labs / Parallax  ◆  CODEX Project  ◆  TIEKAT v64.0.0 Sovereign Substrate Weave</div>
+  <div class="footer-text" style="margin-top:4px">C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369</div>
 </div>"""
 
     def _toggle_script(self) -> str:
@@ -773,8 +773,8 @@ def visualize_text(
     One-shot: run filter + TIEKAT analysis on text and generate full dashboard HTML.
     Writes to output_path and returns the path.
     """
-    from codex.codex_filter import InstitutionalFilter
-    from codex.codex_tiekat_engine import TIEKATPatternEngine
+    from codex_filter import InstitutionalFilter
+    from codex_tiekat_engine import TIEKATPatternEngine
 
     f_engine = InstitutionalFilter(tradition=tradition)
     t_engine = TIEKATPatternEngine(tradition=tradition)
@@ -804,17 +804,15 @@ def visualize_comparison(
     """
     One-shot: run full analysis + comparison on two texts and generate dashboard.
     """
-    from codex.codex_comparator import CodexComparator
-    from codex.codex_filter import InstitutionalFilter
-    from codex.codex_tiekat_engine import TIEKATPatternEngine
+    from codex_filter import InstitutionalFilter
+    from codex_tiekat_engine import TIEKATPatternEngine
+    from codex_comparator import CodexComparator
 
     fa = InstitutionalFilter(tradition=tradition_a)
-    fb = InstitutionalFilter(tradition=tradition_b)
     ta = TIEKATPatternEngine(tradition=tradition_a)
     tb = TIEKATPatternEngine(tradition=tradition_b)
 
     fr_a = fa.analyze(text_a, source=source_a)
-    fr_b = fb.analyze(text_b, source=source_b)
     tr_a = ta.analyze(text_a, source=source_a)
     tr_b = tb.analyze(text_b, source=source_b)
 
