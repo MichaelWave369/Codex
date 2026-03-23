@@ -22,6 +22,7 @@ dev = [
 
 [project.scripts]
 codex = "codex.cli:app"
+codex-tiekat = "codex.codex_cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -40,6 +41,9 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N"]
 ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/codex/codex_*.py" = ["E501", "E701", "UP042", "F841", "B905"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

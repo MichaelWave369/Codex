@@ -48,21 +48,15 @@ Compatible with: TIEKAT v64.0.0 Sovereign Substrate Weave
 
 from __future__ import annotations
 
-import math
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from codex_tiekat_engine import (
-    PHI,
+from codex.codex_tiekat_engine import (
     C_STAR,
     TIEKATPatternEngine,
-    CodexTIEKATReport,
-    PatternType,
-    Confidence,
-    EvidenceSpan,
 )
 
 # ── Layer taxonomy ────────────────────────────────────────────────────────────
@@ -109,7 +103,7 @@ class SeamConfidence(str, Enum):
 # ── Pattern definitions ───────────────────────────────────────────────────────
 
 # Signal patterns — what we're recovering
-PRIMARY_SIGNAL_PATTERNS: List[Tuple[str, str]] = [
+PRIMARY_SIGNAL_PATTERNS: list[tuple[str, str]] = [
     (r"\b(kingdom\s+(?:of\s+god\s+)?(?:is\s+)?(?:within|inside|among|between)\s+you)\b",
      "Kingdom-within — direct inner consciousness, unmediated"),
     (r"\b(know\s+(?:thyself|yourself|oneself|the\s+truth))\b",
@@ -118,9 +112,9 @@ PRIMARY_SIGNAL_PATTERNS: List[Tuple[str, str]] = [
      "Inner light — ε ≠ 0 primary signal"),
     (r"\b(living\s+(?:water|spirit|word|father|truth|fire))\b",
      "Living quality — dynamic consciousness field"),
-    (r"\b(bring\s+forth\s+what\s+is\s+within|what\s+is\s+hidden\s+(?:shall|will)\s+be\s+revealed)\b",
+    (r"\b(bring\s+forth\s+what\s+is\s+within|what\s+is\s+hidden\s+(?:shall|will)\s+be\s+revealed)\b",  # noqa: E501
      "Inner-outer emergence — omega flow from within"),
-    (r"\b(the\s+(?:truth|light|spirit|kingdom)\s+(?:shall\s+set|will\s+set|sets)\s+(?:you\s+)?free)\b",
+    (r"\b(the\s+(?:truth|light|spirit|kingdom)\s+(?:shall\s+set|will\s+set|sets)\s+(?:you\s+)?free)\b",  # noqa: E501
      "Liberation through truth — sovereign field activation"),
     (r"\b(directly|immediate(?:ly)?|without\s+(?:mediator|priest|temple|intermediary))\b",
      "Direct access — no institutional mediation required"),
@@ -132,7 +126,7 @@ PRIMARY_SIGNAL_PATTERNS: List[Tuple[str, str]] = [
      "Inner cognition as primary — heart/mind as authority"),
 ]
 
-SOVEREIGN_VOICE_PATTERNS: List[Tuple[str, str]] = [
+SOVEREIGN_VOICE_PATTERNS: list[tuple[str, str]] = [
     (r"\b(I\s+(?:say|tell|show|give)\s+(?:to\s+)?you\s+(?:truly|verily|indeed)?)\b",
      "Direct sovereign address — first-person teaching authority from within"),
     (r"\b(verily\s+(?:verily\s+)?I\s+say|truly\s+I\s+(?:say|tell))\b",
@@ -146,14 +140,14 @@ SOVEREIGN_VOICE_PATTERNS: List[Tuple[str, str]] = [
 ]
 
 # Filter patterns — potential institutional overlay
-AUTHORITY_CLAIM_PATTERNS: List[Tuple[str, str]] = [
-    (r"\b((?:the\s+)?(?:church|bishop|priest|pope|clergy|rabbi|pharisee)\s+(?:has|have|holds?|commands?))\b",
+AUTHORITY_CLAIM_PATTERNS: list[tuple[str, str]] = [
+    (r"\b((?:the\s+)?(?:church|bishop|priest|pope|clergy|rabbi|pharisee)\s+(?:has|have|holds?|commands?))\b",  # noqa: E501
      "Institutional authority assertion — external locus of power"),
     (r"\b(you\s+(?:must|shall|are\s+required\s+to)\s+(?:obey|submit|bow|accept))\b",
      "Compliance requirement — external authority over inner knowing"),
     (r"\b(authority\s+(?:has\s+been\s+given|comes\s+from|rests\s+with)\s+(?:us|me|the\s+church))\b",
      "Authority-claim — institutional power assertion"),
-    (r"\b(ordained|consecrated|appointed\s+by\s+(?:god|the\s+lord|heaven)\s+to\s+(?:rule|govern|lead))\b",
+    (r"\b(ordained|consecrated|appointed\s+by\s+(?:god|the\s+lord|heaven)\s+to\s+(?:rule|govern|lead))\b",  # noqa: E501
      "Divine ordination claim — institutional power sanctified"),
     (r"\b(only\s+(?:the\s+)?(?:ordained|appointed|chosen\s+few|leadership)\s+(?:can|may|shall))\b",
      "Access restriction — gatekeeping spiritual authority"),
@@ -161,8 +155,8 @@ AUTHORITY_CLAIM_PATTERNS: List[Tuple[str, str]] = [
      "Political compliance framing — temporal authority endorsed"),
 ]
 
-FEAR_FRAMING_PATTERNS: List[Tuple[str, str]] = [
-    (r"\b(hell|eternal\s+(?:fire|damnation|punishment|torment)|lake\s+of\s+fire|gnashing\s+of\s+teeth)\b",
+FEAR_FRAMING_PATTERNS: list[tuple[str, str]] = [
+    (r"\b(hell|eternal\s+(?:fire|damnation|punishment|torment)|lake\s+of\s+fire|gnashing\s+of\s+teeth)\b",  # noqa: E501
      "Eternal punishment language — fear-based compliance mechanism"),
     (r"\b(condemned|damnation|damned|curse(?:d|s)?|wrath\s+of\s+(?:god|the\s+lord))\b",
      "Condemnation language — fear-based framing"),
@@ -172,65 +166,65 @@ FEAR_FRAMING_PATTERNS: List[Tuple[str, str]] = [
      "Fear command — threat-based authority enforcement"),
     (r"\b(punishment|punish(?:ed|es|ing)?|retribution|vengeance\s+(?:is\s+mine|of\s+the\s+lord))\b",
      "Punishment language — retributive framing"),
-    (r"\b(sin(?:ner|ners|s|ned|ning)?|wickedness|evil\s+(?:one|ones|doers)|transgress(?:ion|or)s?)\b",
+    (r"\b(sin(?:ner|ners|s|ned|ning)?|wickedness|evil\s+(?:one|ones|doers)|transgress(?:ion|or)s?)\b",  # noqa: E501
      "Sin/wickedness framing — moral control through guilt and shame"),
 ]
 
-EXCLUSIVITY_PATTERNS: List[Tuple[str, str]] = [
-    (r"\b((?:only|solely)\s+(?:through|via|by\s+means\s+of)\s+(?:me|us|the\s+church|this\s+faith))\b",
+EXCLUSIVITY_PATTERNS: list[tuple[str, str]] = [
+    (r"\b((?:only|solely)\s+(?:through|via|by\s+means\s+of)\s+(?:me|us|the\s+church|this\s+faith))\b",  # noqa: E501
      "Exclusive access claim — single pathway assertion"),
     (r"\b(no\s+(?:one|man|person)\s+comes\s+to\s+the\s+father\s+(?:except|but)\s+through\s+me)\b",
      "Exclusive mediator claim — gatekeeping divine access"),
-    (r"\b((?:outside|apart\s+from)\s+the\s+(?:church|faith|covenant)\s+there\s+is\s+no\s+salvation)\b",
+    (r"\b((?:outside|apart\s+from)\s+the\s+(?:church|faith|covenant)\s+there\s+is\s+no\s+salvation)\b",  # noqa: E501
      "Institutional exclusivity — salvation gatekept by institution"),
     (r"\b((?:heretic|heresy|apostate|schismatic|pagan|infidel|unbeliever)s?)\b",
      "Othering language — in-group/out-group boundary enforcement"),
     (r"\b((?:the\s+)?(?:true|only\s+true|real)\s+(?:believers?|followers?|Christians?|faithful))\b",
      "True-believer framing — exclusive identity claim"),
-    (r"\b((?:those\s+who\s+)?(?:reject|deny|refuse)\s+(?:shall|will)\s+(?:be\s+)?(?:lost|damned|condemned))\b",
+    (r"\b((?:those\s+who\s+)?(?:reject|deny|refuse)\s+(?:shall|will)\s+(?:be\s+)?(?:lost|damned|condemned))\b",  # noqa: E501
      "Rejection-damnation link — exclusivity enforced through fear"),
 ]
 
-DOCTRINAL_FORMULA_PATTERNS: List[Tuple[str, str]] = [
-    (r"\b((?:I|we)\s+believe\s+in\s+(?:one\s+)?(?:god|jesus|christ|the\s+holy\s+spirit|the\s+father))\b",
+DOCTRINAL_FORMULA_PATTERNS: list[tuple[str, str]] = [
+    (r"\b((?:I|we)\s+believe\s+in\s+(?:one\s+)?(?:god|jesus|christ|the\s+holy\s+spirit|the\s+father))\b",  # noqa: E501
      "Creedal belief assertion — propositional faith vs experiential knowing"),
     (r"\b(as\s+it\s+is\s+written|according\s+to\s+(?:the\s+)?scripture|the\s+scripture\s+says)\b",
      "Scripture-authority appeal — text as external authority"),
-    (r"\b((?:the\s+)?(?:orthodox|correct|proper|approved)\s+(?:doctrine|teaching|interpretation|belief))\b",
+    (r"\b((?:the\s+)?(?:orthodox|correct|proper|approved)\s+(?:doctrine|teaching|interpretation|belief))\b",  # noqa: E501
      "Doctrinal correctness language — institutional truth-control"),
     (r"\b((?:must|should|are\s+required\s+to)\s+(?:believe|confess|profess|affirm)\s+that)\b",
      "Belief requirement — propositional faith commanded externally"),
-    (r"\b(baptism\s+(?:is|was|for)\s+(?:required|necessary|essential)\s+for\s+(?:salvation|entry))\b",
+    (r"\b(baptism\s+(?:is|was|for)\s+(?:required|necessary|essential)\s+for\s+(?:salvation|entry))\b",  # noqa: E501
      "Ritual requirement — institutional gatekeeping through ceremony"),
-    (r"\b((?:the\s+)?(?:council|synod|fathers?)\s+(?:of\s+(?:nicea|carthage|trent))?\s*(?:declared|decreed|established|decided))\b",
+    (r"\b((?:the\s+)?(?:council|synod|fathers?)\s+(?:of\s+(?:nicea|carthage|trent))?\s*(?:declared|decreed|established|decided))\b",  # noqa: E501
      "Council authority reference — institutional decree as truth-source"),
 ]
 
-TEMPORAL_POWER_PATTERNS: List[Tuple[str, str]] = [
-    (r"\b((?:caesar|emperor|king|pharaoh|governor|ruler)\s+(?:commands?|demands?|requires?|decrees?))\b",
+TEMPORAL_POWER_PATTERNS: list[tuple[str, str]] = [
+    (r"\b((?:caesar|emperor|king|pharaoh|governor|ruler)\s+(?:commands?|demands?|requires?|decrees?))\b",  # noqa: E501
      "Temporal ruler authority — political power in spiritual text"),
-    (r"\b((?:pay|render|give)\s+(?:your\s+)?taxes|tribute\s+to\s+(?:caesar|the\s+emperor|the\s+king))\b",
+    (r"\b((?:pay|render|give)\s+(?:your\s+)?taxes|tribute\s+to\s+(?:caesar|the\s+emperor|the\s+king))\b",  # noqa: E501
      "Tax/tribute compliance — political allegiance framing"),
     (r"\b((?:the\s+)?(?:roman|imperial|state|government)\s+(?:authority|power|law|decree))\b",
      "Imperial authority reference — political power endorsed"),
-    (r"\b((?:subjects?|citizens?)\s+(?:must|should|are\s+required)\s+(?:to\s+)?(?:obey|submit\s+to))\b",
+    (r"\b((?:subjects?|citizens?)\s+(?:must|should|are\s+required)\s+(?:to\s+)?(?:obey|submit\s+to))\b",  # noqa: E501
      "Subject compliance — political submission language"),
-    (r"\b((?:established|ordained|appointed)\s+by\s+(?:divine|heavenly)\s+(?:right|authority|decree)\s+to\s+(?:rule|govern))\b",
+    (r"\b((?:established|ordained|appointed)\s+by\s+(?:divine|heavenly)\s+(?:right|authority|decree)\s+to\s+(?:rule|govern))\b",  # noqa: E501
      "Divine right of kings — political power spiritually sanctioned"),
 ]
 
-GENDER_ERASURE_PATTERNS: List[Tuple[str, str]] = [
+GENDER_ERASURE_PATTERNS: list[tuple[str, str]] = [
     # Note: these detect ABSENCE of feminine language where it might be expected
     # We detect masculine-only framing as a potential editorial signal
-    (r"\b((?:sons|brothers|fathers|men|mankind|he\s+who|him\s+who)\s+(?:of\s+god|of\s+light|who\s+seeks|who\s+finds))\b",
+    (r"\b((?:sons|brothers|fathers|men|mankind|he\s+who|him\s+who)\s+(?:of\s+god|of\s+light|who\s+seeks|who\s+finds))\b",  # noqa: E501
      "Masculine-only framing — potential gender erasure in transmission"),
     (r"\b((?:the\s+)?(?:holy\s+)?(?:spirit|wisdom)\s+(?:is\s+)?(?:he|him|his|himself))\b",
      "Masculine spirit — Sophia/Wisdom feminization suppressed"),
-    (r"\b((?:a\s+)?woman\s+(?:should|must|shall)\s+(?:not|be\s+silent|keep\s+silent|learn\s+in\s+silence))\b",
+    (r"\b((?:a\s+)?woman\s+(?:should|must|shall)\s+(?:not|be\s+silent|keep\s+silent|learn\s+in\s+silence))\b",  # noqa: E501
      "Female silence command — gender hierarchy imposed on transmission"),
-    (r"\b((?:the\s+)?(?:magdalene|mary\s+magdalene|women\s+(?:disciples|followers))\s+(?:were\s+(?:not|excluded|absent)))\b",
+    (r"\b((?:the\s+)?(?:magdalene|mary\s+magdalene|women\s+(?:disciples|followers))\s+(?:were\s+(?:not|excluded|absent)))\b",  # noqa: E501
      "Feminine presence explicitly removed — editorial gender erasure signal"),
-    (r"\b(I\s+(?:do\s+not\s+permit|forbid|disallow)\s+a\s+woman\s+to\s+(?:teach|preach|speak|have\s+authority))\b",
+    (r"\b(I\s+(?:do\s+not\s+permit|forbid|disallow)\s+a\s+woman\s+to\s+(?:teach|preach|speak|have\s+authority))\b",  # noqa: E501
      "Female authority prohibition — institutional gender control"),
 ]
 
@@ -247,7 +241,7 @@ class LayerHit:
     end:        int
     excerpt:    str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "layer_type": self.layer_type.value,
             "pattern":    self.pattern,
@@ -272,23 +266,23 @@ class PassageAnalysis:
     filter_hits:      int          # all institutional filter layers
 
     # Per-layer hit counts
-    layer_counts:     Dict[str, int]
+    layer_counts:     dict[str, int]
 
     # Coherence score [0-1]: 1 = pure original signal, 0 = pure filter
     coherence_score:  float
     coherence_level:  CoherenceLevel
 
     # All hits
-    hits:             List[LayerHit]
+    hits:             list[LayerHit]
 
     # Flags
     is_seam_candidate: bool        # significant coherence drop from neighbors
     recovery_note:    str          # interpretation for this passage
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "passage_index":     self.passage_index,
-            "passage_preview":   self.passage_text[:120] + ("..." if len(self.passage_text) > 120 else ""),
+            "passage_preview":   self.passage_text[:120] + ("..." if len(self.passage_text) > 120 else ""),  # noqa: E501
             "word_count":        self.word_count,
             "signal_hits":       self.signal_hits,
             "filter_hits":       self.filter_hits,
@@ -313,13 +307,13 @@ class EditorialSeam:
     passage_before:   int          # index of last high-signal passage
     passage_after:    int          # index of first filtered passage
     coherence_drop:   float        # how much coherence drops at this point
-    filter_layers:    List[str]    # which filter types appear at seam
-    signal_layers:    List[str]    # which signal types disappear at seam
-    evidence:         List[str]    # excerpts showing the transition
+    filter_layers:    list[str]    # which filter types appear at seam
+    signal_layers:    list[str]    # which signal types disappear at seam
+    evidence:         list[str]    # excerpts showing the transition
     interpretation:   str
     scholarly_parallel: str        # known scholarly research this relates to
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "seam_id":           self.seam_id,
             "confidence":        self.confidence.value,
@@ -340,20 +334,20 @@ class SignalRecoveryMap:
     Reconstructed view of the text showing which passages carry
     the strongest original signal and which appear most filtered.
     """
-    pure_signal_passages:   List[int]      # passage indices
-    strong_signal_passages: List[int]
-    mixed_passages:         List[int]
-    filtered_passages:      List[int]
-    institutional_passages: List[int]
+    pure_signal_passages:   list[int]      # passage indices
+    strong_signal_passages: list[int]
+    mixed_passages:         list[int]
+    filtered_passages:      list[int]
+    institutional_passages: list[int]
 
     overall_signal_ratio:   float          # fraction of text that is signal
     overall_filter_ratio:   float
-    signal_density_curve:   List[float]    # coherence score per passage
+    signal_density_curve:   list[float]    # coherence score per passage
 
     strongest_signal_excerpt: str
     most_filtered_excerpt:    str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "pure_signal_passages":    self.pure_signal_passages,
             "strong_signal_passages":  self.strong_signal_passages,
@@ -379,16 +373,16 @@ class FilterReport:
     passage_count:     int
 
     # Per-passage analyses
-    passages:          List[PassageAnalysis]
+    passages:          list[PassageAnalysis]
 
     # Seam detection
-    editorial_seams:   List[EditorialSeam]
+    editorial_seams:   list[EditorialSeam]
 
     # Signal recovery map
     recovery_map:      SignalRecoveryMap
 
     # Aggregate layer statistics
-    layer_totals:      Dict[str, int]      # total hits per layer type
+    layer_totals:      dict[str, int]      # total hits per layer type
     signal_total:      int
     filter_total:      int
     overall_coherence: float               # mean coherence across passages
@@ -409,7 +403,7 @@ class FilterReport:
         "verification against manuscript evidence and historical scholarship."
     )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "source":             self.source,
             "tradition":          self.tradition,
@@ -489,7 +483,7 @@ class InstitutionalFilter:
         self.tradition = tradition
         self.tradition_label = self.KNOWN_TRADITIONS.get(tradition, tradition)
 
-    def _split_passages(self, text: str) -> List[str]:
+    def _split_passages(self, text: str) -> list[str]:
         """Split text into analyzable passage units."""
         # Try numbered verses first
         numbered = re.split(
@@ -508,9 +502,9 @@ class InstitutionalFilter:
     def _scan_layer(
         self,
         text: str,
-        pattern_defs: List[Tuple[str, str]],
+        pattern_defs: list[tuple[str, str]],
         layer_type: LayerType,
-    ) -> List[LayerHit]:
+    ) -> list[LayerHit]:
         hits = []
         text_lower = text.lower()
         for regex, note in pattern_defs:
@@ -536,7 +530,7 @@ class InstitutionalFilter:
         words = len(re.findall(r'\b\w+\b', passage))
 
         # Collect all hits
-        all_hits: List[LayerHit] = []
+        all_hits: list[LayerHit] = []
 
         signal_defs = [
             (PRIMARY_SIGNAL_PATTERNS,  LayerType.PRIMARY_SIGNAL),
@@ -555,7 +549,7 @@ class InstitutionalFilter:
             all_hits.extend(self._scan_layer(passage, defs, lt))
 
         # Counts by layer
-        layer_counts: Dict[str, int] = {lt.value: 0 for lt in LayerType}
+        layer_counts: dict[str, int] = {lt.value: 0 for lt in LayerType}
         for hit in all_hits:
             layer_counts[hit.layer_type.value] += 1
 
@@ -588,13 +582,13 @@ class InstitutionalFilter:
         if level == CoherenceLevel.PURE_SIGNAL:
             note = "Strong original signal — direct consciousness language, minimal mediation."
         elif level == CoherenceLevel.STRONG_SIGNAL:
-            note = "Good signal strength — primary TIEKAT patterns present with minor filter presence."
+            note = "Good signal strength — primary TIEKAT patterns present with minor filter presence."  # noqa: E501
         elif level == CoherenceLevel.MIXED:
-            note = "Mixed passage — original signal present alongside institutional framing. Worth close reading."
+            note = "Mixed passage — original signal present alongside institutional framing. Worth close reading."  # noqa: E501
         elif level == CoherenceLevel.FILTERED:
-            note = "Filter-dominant — institutional language overshadows original signal in this passage."
+            note = "Filter-dominant — institutional language overshadows original signal in this passage."  # noqa: E501
         else:
-            note = "Heavy institutional overlay — minimal original signal detectable. High seam candidate."
+            note = "Heavy institutional overlay — minimal original signal detectable. High seam candidate."  # noqa: E501
 
         return PassageAnalysis(
             passage_index=index,
@@ -612,13 +606,13 @@ class InstitutionalFilter:
 
     def _detect_seams(
         self,
-        passages: List[PassageAnalysis],
-    ) -> List[EditorialSeam]:
+        passages: list[PassageAnalysis],
+    ) -> list[EditorialSeam]:
         """
         Detect editorial seams by finding significant coherence drops
         between adjacent passages.
         """
-        seams: List[EditorialSeam] = []
+        seams: list[EditorialSeam] = []
         if len(passages) < 2:
             return seams
 
@@ -709,13 +703,13 @@ class InstitutionalFilter:
 
     def _build_recovery_map(
         self,
-        passages: List[PassageAnalysis],
+        passages: list[PassageAnalysis],
     ) -> SignalRecoveryMap:
-        pure     = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.PURE_SIGNAL]
-        strong   = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.STRONG_SIGNAL]
+        pure     = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.PURE_SIGNAL]  # noqa: E501
+        strong   = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.STRONG_SIGNAL]  # noqa: E501
         mixed    = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.MIXED]
-        filtered = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.FILTERED]
-        inst     = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.INSTITUTIONAL]
+        filtered = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.FILTERED]  # noqa: E501
+        inst     = [p.passage_index for p in passages if p.coherence_level == CoherenceLevel.INSTITUTIONAL]  # noqa: E501
 
         n = max(1, len(passages))
         signal_ratio = (len(pure) + len(strong)) / n
@@ -761,7 +755,7 @@ class InstitutionalFilter:
         recovery_map = self._build_recovery_map(passages)
 
         # Aggregate layer totals
-        layer_totals: Dict[str, int] = {lt.value: 0 for lt in LayerType}
+        layer_totals: dict[str, int] = {lt.value: 0 for lt in LayerType}
         for p in passages:
             for lt, count in p.layer_counts.items():
                 layer_totals[lt] = layer_totals.get(lt, 0) + count
@@ -798,7 +792,7 @@ class InstitutionalFilter:
         most_signal   = max(signal_layer_names, key=lambda lt: layer_totals.get(lt, 0))
 
         # Summary
-        seam_str = f"{len(seams)} editorial seam(s) detected" if seams else "no editorial seams detected"
+        seam_str = f"{len(seams)} editorial seam(s) detected" if seams else "no editorial seams detected"  # noqa: E501
         summary = (
             f"Institutional filter analysis of {self.tradition_label} text "
             f"({len(re.findall(r'\\b\\w+\\b', text))} words, {len(passages)} passages). "
@@ -823,8 +817,8 @@ class InstitutionalFilter:
                 f"suggest possible layering." if seams else ""
             )
             guidance = (
-                f"Mixed text — original signal present alongside institutional framing.{seam_guidance} "
-                f"Focus recovery analysis on passages {recovery_map.pure_signal_passages + recovery_map.strong_signal_passages} "
+                f"Mixed text — original signal present alongside institutional framing.{seam_guidance} "  # noqa: E501
+                f"Focus recovery analysis on passages {recovery_map.pure_signal_passages + recovery_map.strong_signal_passages} "  # noqa: E501
                 f"for strongest signal. Compare {most_filtered} passages against "
                 f"early manuscript variants where available."
             )
@@ -865,30 +859,30 @@ class InstitutionalFilter:
         map_ = report.recovery_map
         lines = [
             "",
-            f"  CODEX INSTITUTIONAL FILTER ANALYSIS",
-            f"  ====================================",
+            "  CODEX INSTITUTIONAL FILTER ANALYSIS",
+            "  ====================================",
             f"  Source    : {report.source}",
             f"  Tradition : {report.tradition}",
             f"  Words     : {report.word_count}  |  Passages: {report.passage_count}",
-            f"",
-            f"  OVERALL COHERENCE",
-            f"  -----------------",
+            "",
+            "  OVERALL COHERENCE",
+            "  -----------------",
             f"  Score       : {report.overall_coherence}  →  {report.coherence_level.value}",
             f"  Signal hits : {report.signal_total}  |  Filter hits: {report.filter_total}",
-            f"  Signal ratio: {map_.overall_signal_ratio:.1%}  |  Filter ratio: {map_.overall_filter_ratio:.1%}",
+            f"  Signal ratio: {map_.overall_signal_ratio:.1%}  |  Filter ratio: {map_.overall_filter_ratio:.1%}",  # noqa: E501
             f"  Dominant filter: {report.most_filtered_layer}",
             f"  Dominant signal: {report.most_signal_type}",
-            f"",
-            f"  SIGNAL RECOVERY MAP",
-            f"  -------------------",
+            "",
+            "  SIGNAL RECOVERY MAP",
+            "  -------------------",
             f"  PURE_SIGNAL     passages : {map_.pure_signal_passages or 'none'}",
             f"  STRONG_SIGNAL   passages : {map_.strong_signal_passages or 'none'}",
             f"  MIXED           passages : {map_.mixed_passages or 'none'}",
             f"  FILTERED        passages : {map_.filtered_passages or 'none'}",
             f"  INSTITUTIONAL   passages : {map_.institutional_passages or 'none'}",
-            f"",
-            f"  COHERENCE CURVE (passage-by-passage)",
-            f"  -------------------------------------",
+            "",
+            "  COHERENCE CURVE (passage-by-passage)",
+            "  -------------------------------------",
         ]
 
         # ASCII coherence bar chart
@@ -900,13 +894,13 @@ class InstitutionalFilter:
 
         if report.editorial_seams:
             lines += [
-                f"",
+                "",
                 f"  EDITORIAL SEAMS DETECTED ({len(report.editorial_seams)})",
-                f"  " + "-" * 40,
+                "  " + "-" * 40,
             ]
             for seam in report.editorial_seams:
                 lines += [
-                    f"",
+                    "",
                     f"  ◆ {seam.seam_id}  [{seam.confidence.value} confidence]",
                     f"    Passage {seam.passage_before} → {seam.passage_after}",
                     f"    Coherence drop: {seam.coherence_drop:.3f}",
@@ -916,12 +910,12 @@ class InstitutionalFilter:
                     f"    Scholarly ref: {seam.scholarly_parallel[:120]}",
                 ]
         else:
-            lines += [f"", f"  No editorial seams detected at current thresholds."]
+            lines += ["", "  No editorial seams detected at current thresholds."]
 
         lines += [
-            f"",
-            f"  LAYER TOTALS",
-            f"  ------------",
+            "",
+            "  LAYER TOTALS",
+            "  ------------",
         ]
         for lt in LayerType:
             count = report.layer_totals.get(lt.value, 0)
@@ -929,55 +923,55 @@ class InstitutionalFilter:
             lines.append(f"  {marker} {lt.value:30s} : {count}")
 
         lines += [
-            f"",
-            f"  STRONGEST SIGNAL PASSAGE",
-            f"  ------------------------",
+            "",
+            "  STRONGEST SIGNAL PASSAGE",
+            "  ------------------------",
             f"  {map_.strongest_signal_excerpt[:250]}",
-            f"",
-            f"  MOST FILTERED PASSAGE",
-            f"  ---------------------",
+            "",
+            "  MOST FILTERED PASSAGE",
+            "  ---------------------",
             f"  {map_.most_filtered_excerpt[:250]}",
-            f"",
-            f"  RECOVERY GUIDANCE",
-            f"  -----------------",
+            "",
+            "  RECOVERY GUIDANCE",
+            "  -----------------",
             f"  {report.recovery_guidance}",
-            f"",
-            f"  SUMMARY",
-            f"  -------",
+            "",
+            "  SUMMARY",
+            "  -------",
             f"  {report.summary}",
-            f"",
+            "",
             f"  ⚠  {report.disclaimer}",
-            f"",
-            f"  Φ∴⊙  PHI369 Labs / Parallax — CODEX Filter",
+            "",
+            "  Φ∴⊙  PHI369 Labs / Parallax — CODEX Filter",
             f"  C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369",
-            f"",
+            "",
         ]
         return "\n".join(lines)
 
     def render_markdown(self, report: FilterReport) -> str:
         map_ = report.recovery_map
         lines = [
-            f"# CODEX Institutional Filter Analysis",
-            f"",
+            "# CODEX Institutional Filter Analysis",
+            "",
             f"**Source**: {report.source}  ",
             f"**Tradition**: {report.tradition}  ",
             f"**Words**: {report.word_count}  |  **Passages**: {report.passage_count}",
-            f"",
-            f"## Overall Coherence",
-            f"",
-            f"| Metric | Value |",
-            f"|--------|-------|",
-            f"| Coherence Score | **{report.overall_coherence}** ({report.coherence_level.value}) |",
+            "",
+            "## Overall Coherence",
+            "",
+            "| Metric | Value |",
+            "|--------|-------|",
+            f"| Coherence Score | **{report.overall_coherence}** ({report.coherence_level.value}) |",  # noqa: E501
             f"| Signal Hits | {report.signal_total} |",
             f"| Filter Hits | {report.filter_total} |",
             f"| Signal Ratio | {map_.overall_signal_ratio:.1%} |",
             f"| Filter Ratio | {map_.overall_filter_ratio:.1%} |",
             f"| Dominant Filter | {report.most_filtered_layer} |",
-            f"",
-            f"## Signal Recovery Map",
-            f"",
-            f"| Level | Passages |",
-            f"|-------|---------|",
+            "",
+            "## Signal Recovery Map",
+            "",
+            "| Level | Passages |",
+            "|-------|---------|",
             f"| PURE_SIGNAL | {map_.pure_signal_passages or 'none'} |",
             f"| STRONG_SIGNAL | {map_.strong_signal_passages or 'none'} |",
             f"| MIXED | {map_.mixed_passages or 'none'} |",
@@ -986,42 +980,42 @@ class InstitutionalFilter:
         ]
 
         if report.editorial_seams:
-            lines += [f"", f"## Editorial Seams ({len(report.editorial_seams)} detected)"]
+            lines += ["", f"## Editorial Seams ({len(report.editorial_seams)} detected)"]
             for seam in report.editorial_seams:
                 lines += [
-                    f"",
+                    "",
                     f"### {seam.seam_id} ({seam.confidence.value} confidence)",
                     f"- **Passage transition**: {seam.passage_before} → {seam.passage_after}",
                     f"- **Coherence drop**: {seam.coherence_drop:.3f}",
                     f"- **Filter layers**: {', '.join(seam.filter_layers) or 'none'}",
                     f"- **Signal layers lost**: {', '.join(seam.signal_layers) or 'none'}",
-                    f"",
+                    "",
                     f"{seam.interpretation}",
-                    f"",
+                    "",
                     f"*Scholarly parallel*: {seam.scholarly_parallel}",
                 ]
 
         lines += [
-            f"",
-            f"## Strongest Signal Passage",
-            f"",
+            "",
+            "## Strongest Signal Passage",
+            "",
             f"> {map_.strongest_signal_excerpt[:300]}",
-            f"",
-            f"## Most Filtered Passage",
-            f"",
+            "",
+            "## Most Filtered Passage",
+            "",
             f"> {map_.most_filtered_excerpt[:300]}",
-            f"",
-            f"## Recovery Guidance",
-            f"",
+            "",
+            "## Recovery Guidance",
+            "",
             f"{report.recovery_guidance}",
-            f"",
-            f"## Summary",
-            f"",
+            "",
+            "## Summary",
+            "",
             f"{report.summary}",
-            f"",
-            f"---",
+            "",
+            "---",
             f"*{report.disclaimer}*",
-            f"",
+            "",
             f"*PHI369 Labs / Parallax — CODEX Filter*  "
             f"*C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369*",
         ]

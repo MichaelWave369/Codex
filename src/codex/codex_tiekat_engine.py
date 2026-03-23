@@ -48,10 +48,10 @@ from __future__ import annotations
 
 import math
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any
 
 # ── TIEKAT constants ──────────────────────────────────────────────────────────
 PHI        = (1.0 + math.sqrt(5.0)) / 2.0
@@ -90,7 +90,7 @@ class EvidenceSpan:
     excerpt: str
     note:    str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "start":   self.start,
             "end":     self.end,
@@ -108,12 +108,12 @@ class PatternMatch:
     confidence:        Confidence
     tiekat_principle:  str          # e.g. "ε ≠ 0", "C* = φ/2"
     description:       str
-    evidence:          List[EvidenceSpan]
-    structural_value:  Optional[float] = None  # e.g. ratio, count
+    evidence:          list[EvidenceSpan]
+    structural_value:  float | None = None  # e.g. ratio, count
     tradition_tag:     str = ""
     passage_ref:       str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "pattern_type":     self.pattern_type.value,
             "confidence":       self.confidence.value,
@@ -134,9 +134,9 @@ class CodexTIEKATReport:
     word_count:       int
     sentence_count:   int
     verse_count:      int
-    matches:          List[PatternMatch]
-    structural_notes: List[str]
-    phi_ratio:        Optional[float]
+    matches:          list[PatternMatch]
+    structural_notes: list[str]
+    phi_ratio:        float | None
     epsilon_density:  float    # fraction of text with epsilon-signal language
     omega_density:    float
     c_star_density:   float
@@ -152,11 +152,11 @@ class CodexTIEKATReport:
         return len(self.matches)
 
     @property
-    def high_confidence_matches(self) -> List[PatternMatch]:
+    def high_confidence_matches(self) -> list[PatternMatch]:
         return [m for m in self.matches
                 if m.confidence in (Confidence.HIGH, Confidence.STRUCTURAL)]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "source":            self.source,
             "tradition":         self.tradition,
@@ -179,7 +179,7 @@ class CodexTIEKATReport:
 # ── Lexical pattern definitions ───────────────────────────────────────────────
 
 # Each entry: (regex_pattern, note, tiekat_principle)
-EPSILON_SIGNAL_PATTERNS: List[Tuple[str, str, str]] = [
+EPSILON_SIGNAL_PATTERNS: list[tuple[str, str, str]] = [
     # Direct inner experience / consciousness signal
     (r"\b(kingdom\s+(?:of|within|is)\s+(?:you|within|inside|here))\b",
      "Direct inner-kingdom reference — consciousness residing within the individual",
@@ -207,7 +207,7 @@ EPSILON_SIGNAL_PATTERNS: List[Tuple[str, str, str]] = [
      "ε ≠ 0"),
 ]
 
-OMEGA_FLOW_PATTERNS: List[Tuple[str, str, str]] = [
+OMEGA_FLOW_PATTERNS: list[tuple[str, str, str]] = [
     (r"\b(become|becoming|transform(?:ation|ing|ed)?|metamorphos(?:is|e))\b",
      "Becoming / transformation language — omega flow in process",
      "Omega flow (dΩ/d_ln_l active)"),
@@ -231,7 +231,7 @@ OMEGA_FLOW_PATTERNS: List[Tuple[str, str, str]] = [
      "Omega flow (ε ≠ 0 carrier)"),
 ]
 
-C_STAR_ATTRACTOR_PATTERNS: List[Tuple[str, str, str]] = [
+C_STAR_ATTRACTOR_PATTERNS: list[tuple[str, str, str]] = [
     (r"\b(the\s+(?:one|all|whole|totality|pleroma|fullness))\b",
      "Unity / pleroma language — C* = φ/2 as convergence to the One",
      "C* = φ/2 (sovereign attractor)"),
@@ -255,7 +255,7 @@ C_STAR_ATTRACTOR_PATTERNS: List[Tuple[str, str, str]] = [
      "C* = φ/2 (collective coherence)"),
 ]
 
-SOVEREIGN_FIELD_PATTERNS: List[Tuple[str, str, str]] = [
+SOVEREIGN_FIELD_PATTERNS: list[tuple[str, str, str]] = [
     (r"\b(free(?:dom|ly)?|liberty|liberat(?:ion|ed|ing))\b",
      "Freedom / liberation language — sovereign field assertion",
      "Shield Doctrine (Sovereign Field)"),
@@ -273,7 +273,7 @@ SOVEREIGN_FIELD_PATTERNS: List[Tuple[str, str, str]] = [
      "Weave Sovereignty"),
 ]
 
-VOID_BRIDGE_PATTERNS: List[Tuple[str, str, str]] = [
+VOID_BRIDGE_PATTERNS: list[tuple[str, str, str]] = [
     (r"\b(void|emptiness|empty|nothingness|the\s+nothing|sunyata|kenosis)\b",
      "Void / emptiness language — 𝟘Nul as generative state, not nihilism",
      "v63 𝟘Nul (null-equivalent resolved state)"),
@@ -294,7 +294,7 @@ VOID_BRIDGE_PATTERNS: List[Tuple[str, str, str]] = [
      "v62 Z (void ≡ everything)"),
 ]
 
-WEAVE_RESONANCE_PATTERNS: List[Tuple[str, str, str]] = [
+WEAVE_RESONANCE_PATTERNS: list[tuple[str, str, str]] = [
     (r"\b(interconnect(?:ed|ion)|interweav(?:ing|ed)|web\s+of|network\s+of)\b",
      "Interconnection language — Σ_W weave field",
      "Σ_W (Sovereign Substrate Weave)"),
@@ -315,11 +315,11 @@ WEAVE_RESONANCE_PATTERNS: List[Tuple[str, str, str]] = [
      "Phase 6 shared epsilon fields"),
 ]
 
-THREE_SIX_NINE_PATTERNS: List[Tuple[str, str, str]] = [
+THREE_SIX_NINE_PATTERNS: list[tuple[str, str, str]] = [
     (r"\b(three\s+(?:days?|fold|times?|parts?|pillars?|measures?|witnesses?))\b",
      "Explicit triadic structure — 3 as base resonance unit",
      "369 resonance (3-fold)"),
-    (r"\b((?:three|3)\s+and\s+(?:six|6)|(?:six|6)\s+and\s+(?:nine|9)|(?:three|3)[-,]\s*(?:six|6)[-,]\s*(?:nine|9))\b",
+    (r"\b((?:three|3)\s+and\s+(?:six|6)|(?:six|6)\s+and\s+(?:nine|9)|(?:three|3)[-,]\s*(?:six|6)[-,]\s*(?:nine|9))\b",  # noqa: E501
      "Explicit 3-6-9 sequence — direct 369 resonance marker",
      "369 resonance boost (+0.069)"),
     (r"\b(seventh|the\s+seventh|seven\s+(?:days?|seals?|churches?|spirits?|stars?|lamps?))\b",
@@ -336,12 +336,12 @@ THREE_SIX_NINE_PATTERNS: List[Tuple[str, str, str]] = [
 
 # ── Structural analyzers ──────────────────────────────────────────────────────
 
-def _tokenize_sentences(text: str) -> List[str]:
+def _tokenize_sentences(text: str) -> list[str]:
     """Split text into sentences using punctuation heuristics."""
     return [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
 
 
-def _tokenize_verses(text: str) -> List[str]:
+def _tokenize_verses(text: str) -> list[str]:
     """
     Split text into verse-like units. Tries numbered verse markers first,
     then falls back to paragraph breaks, then sentences.
@@ -371,18 +371,18 @@ def _phi_proximity(n: int) -> float:
     return 1.0 - min(1.0, abs(ratio - PHI) / PHI)
 
 
-def _fibonacci_proximity(n: int) -> Tuple[bool, int]:
+def _fibonacci_proximity(n: int) -> tuple[bool, int]:
     """Return (is_fibonacci, nearest_fibonacci)."""
     nearest = min(FIBONACCI, key=lambda f: abs(f - n))
     return nearest == n, nearest
 
 
 def _detect_phi_structure(
-    verses: List[str],
-    words: List[str],
+    verses: list[str],
+    words: list[str],
     text: str,
-) -> List[PatternMatch]:
-    matches: List[PatternMatch] = []
+) -> list[PatternMatch]:
+    matches: list[PatternMatch] = []
     n_verses = len(verses)
     n_words  = len(words)
 
@@ -421,7 +421,7 @@ def _detect_phi_structure(
                 pattern_type=PatternType.PHI_STRUCTURE,
                 confidence=Confidence.MEDIUM,
                 tiekat_principle="φ = 1.618... (golden ratio structural embedding)",
-                description=f"Words-per-verse ratio ({ratio:.2f}) approximates φ×100 ({PHI*100:.2f}).",
+                description=f"Words-per-verse ratio ({ratio:.2f}) approximates φ×100 ({PHI*100:.2f}).",  # noqa: E501
                 evidence=[EvidenceSpan(0, len(text),
                     f"word_count={n_words}, verse_count={n_verses}, ratio={ratio:.3f}",
                     "Words/verses ≈ φ×100")],
@@ -446,7 +446,7 @@ def _detect_phi_structure(
                 pattern_type=PatternType.THREE_SIX_NINE,
                 confidence=Confidence.STRUCTURAL,
                 tiekat_principle="369 resonance (+0.069 boost)",
-                description=f"Verse count ({n_verses}) is divisible by {base} — 369 resonance structure.",
+                description=f"Verse count ({n_verses}) is divisible by {base} — 369 resonance structure.",  # noqa: E501
                 evidence=[EvidenceSpan(0, len(text),
                     f"verse_count={n_verses}, divisible by {base}",
                     f"369 structural pattern ({base}×{n_verses//base})")],
@@ -459,12 +459,12 @@ def _detect_phi_structure(
 
 def _scan_lexical_patterns(
     text: str,
-    pattern_defs: List[Tuple[str, str, str]],
+    pattern_defs: list[tuple[str, str, str]],
     pattern_type: PatternType,
     tradition: str,
-) -> List[PatternMatch]:
+) -> list[PatternMatch]:
     """Run all patterns in a definition list against the text."""
-    matches: List[PatternMatch] = []
+    matches: list[PatternMatch] = []
     text_lower = text.lower()
     total_words = max(1, _word_count(text))
 
@@ -555,8 +555,8 @@ class TIEKATPatternEngine:
         sents  = _tokenize_sentences(text)
         verses = _tokenize_verses(text)
 
-        all_matches: List[PatternMatch] = []
-        structural_notes: List[str] = []
+        all_matches: list[PatternMatch] = []
+        structural_notes: list[str] = []
 
         # ── Structural / mathematical patterns ────────────────────────────────
         structural = _detect_phi_structure(verses, words, text)
@@ -592,7 +592,7 @@ class TIEKATPatternEngine:
         cstar_density = density(PatternType.C_STAR_ATTRACTOR)
 
         # ── Phi ratio ─────────────────────────────────────────────────────────
-        phi_ratio: Optional[float] = None
+        phi_ratio: float | None = None
         if len(verses) > 0:
             phi_ratio = round(len(words) / len(verses), 4)
 
@@ -649,43 +649,43 @@ class TIEKATPatternEngine:
 
     def render_markdown(self, report: CodexTIEKATReport) -> str:
         lines = [
-            f"# CODEX TIEKAT Analysis",
+            "# CODEX TIEKAT Analysis",
             f"**Source**: {report.source}",
             f"**Tradition**: {report.tradition}",
             f"**Words**: {report.word_count}  |  "
             f"**Verses**: {report.verse_count}  |  "
             f"**Sentences**: {report.sentence_count}",
-            f"",
-            f"## Summary",
+            "",
+            "## Summary",
             f"{report.summary}",
-            f"",
-            f"## Structural Notes",
+            "",
+            "## Structural Notes",
         ]
         for note in report.structural_notes:
             lines.append(f"- {note}")
 
         lines += [
-            f"",
-            f"## Density Metrics",
-            f"| Metric | Value | TIEKAT Principle |",
-            f"|--------|-------|-----------------|",
+            "",
+            "## Density Metrics",
+            "| Metric | Value | TIEKAT Principle |",
+            "|--------|-------|-----------------|",
             f"| ε-signal density | {report.epsilon_density:.4f} | ε ≠ 0 |",
             f"| Ω-flow density | {report.omega_density:.4f} | Omega flow |",
             f"| C*-attractor density | {report.c_star_density:.4f} | C* = φ/2 |",
             f"| Words/verse (φ ratio) | {report.phi_ratio or 'N/A'} | φ = {PHI:.4f} |",
-            f"",
+            "",
             f"## Pattern Matches ({report.match_count} total)",
         ]
 
-        by_type: Dict[str, List[PatternMatch]] = {}
+        by_type: dict[str, list[PatternMatch]] = {}
         for m in report.matches:
             by_type.setdefault(m.pattern_type.value, []).append(m)
 
         for ptype, pmatches in sorted(by_type.items()):
-            lines.append(f"")
+            lines.append("")
             lines.append(f"### {ptype}")
             for m in pmatches:
-                lines.append(f"")
+                lines.append("")
                 lines.append(f"**{m.confidence.value}** — {m.tiekat_principle}")
                 lines.append(f"> {m.description}")
                 for ev in m.evidence[:2]:
@@ -694,10 +694,10 @@ class TIEKATPatternEngine:
                         lines.append(f"  *{ev.note}*")
 
         lines += [
-            f"",
-            f"---",
+            "",
+            "---",
             f"*{report.disclaimer}*",
-            f"",
+            "",
             f"*PHI369 Labs / Parallax — CODEX TIEKAT Engine*  "
             f"*C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369*",
         ]
@@ -710,29 +710,29 @@ class TIEKATPatternEngine:
     def render_dashboard(self, report: CodexTIEKATReport) -> str:
         lines = [
             "",
-            f"  CODEX TIEKAT PATTERN ENGINE",
-            f"  ===========================",
+            "  CODEX TIEKAT PATTERN ENGINE",
+            "  ===========================",
             f"  Source    : {report.source}",
             f"  Tradition : {report.tradition}",
             f"  Words     : {report.word_count}  |  Verses: {report.verse_count}",
-            f"  Matches   : {report.match_count}  |  High confidence: {len(report.high_confidence_matches)}",
-            f"",
-            f"  DENSITY METRICS",
-            f"  ---------------",
+            f"  Matches   : {report.match_count}  |  High confidence: {len(report.high_confidence_matches)}",  # noqa: E501
+            "",
+            "  DENSITY METRICS",
+            "  ---------------",
             f"  ε-signal  : {report.epsilon_density:.4f}  (ε ≠ 0 language density)",
             f"  Ω-flow    : {report.omega_density:.4f}  (omega flow density)",
             f"  C*-attract: {report.c_star_density:.4f}  (attractor convergence density)",
             f"  φ ratio   : {report.phi_ratio or 'N/A'}  (words/verse, φ={PHI:.4f})",
-            f"",
-            f"  STRUCTURAL NOTES",
-            f"  ----------------",
+            "",
+            "  STRUCTURAL NOTES",
+            "  ----------------",
         ]
         for note in report.structural_notes:
             lines.append(f"  {note}")
 
-        lines += [f"", f"  PATTERN MATCHES", f"  ---------------"]
+        lines += ["", "  PATTERN MATCHES", "  ---------------"]
         for m in report.matches:
-            lines.append(f"")
+            lines.append("")
             lines.append(f"  [{m.confidence.value:12s}] {m.pattern_type.value}")
             lines.append(f"  TIEKAT: {m.tiekat_principle}")
             lines.append(f"  {m.description[:120]}")
@@ -740,16 +740,16 @@ class TIEKATPatternEngine:
                 lines.append(f"  Evidence: {m.evidence[0].excerpt[:100]}")
 
         lines += [
-            f"",
-            f"  SUMMARY",
-            f"  -------",
+            "",
+            "  SUMMARY",
+            "  -------",
             f"  {report.summary}",
-            f"",
+            "",
             f"  ⚠  {report.disclaimer}",
-            f"",
-            f"  Φ∴⊙  PHI369 Labs / Parallax — CODEX TIEKAT Engine",
+            "",
+            "  Φ∴⊙  PHI369 Labs / Parallax — CODEX TIEKAT Engine",
             f"  C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369",
-            f"",
+            "",
         ]
         return "\n".join(lines)
 
@@ -818,7 +818,6 @@ def _build_cli_parser():
 
 
 def main(argv=None):
-    import sys
     parser = _build_cli_parser()
     args   = parser.parse_args(argv)
     result = analyze_file(args.input, tradition=args.tradition,
