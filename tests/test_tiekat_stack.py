@@ -1,8 +1,8 @@
 """Tests for the TIEKAT pattern analysis stack."""
-import pytest
-from codex.codex_tiekat_engine import TIEKATPatternEngine, analyze_text
-from codex.codex_filter import InstitutionalFilter, filter_text
+
 from codex.codex_comparator import CodexComparator, compare_texts
+from codex.codex_filter import InstitutionalFilter
+from codex.codex_tiekat_engine import TIEKATPatternEngine, analyze_text
 from codex.codex_visualizer import CodexVisualizer
 
 THOMAS_SAMPLE = (
@@ -28,6 +28,7 @@ def test_tiekat_engine_detects_epsilon_signal():
     engine = TIEKATPatternEngine(tradition="thomas")
     report = engine.analyze(THOMAS_SAMPLE, source="test")
     from codex.codex_tiekat_engine import PatternType
+
     epsilon_matches = [m for m in report.matches if m.pattern_type == PatternType.EPSILON_SIGNAL]
     assert len(epsilon_matches) > 0
 
@@ -40,10 +41,14 @@ def test_filter_returns_report():
 
 
 def test_filter_detects_fear_framing():
-    fear_text = "Fear him who can cast both soul and body into hell. The condemned will face eternal punishment."
+    fear_text = (
+        "Fear him who can cast both soul and body into hell. "
+        "The condemned will face eternal punishment."
+    )
     engine = InstitutionalFilter(tradition="generic")
     report = engine.analyze(fear_text, source="test")
     from codex.codex_filter import LayerType
+
     fear_hits = report.layer_totals.get(LayerType.FEAR_FRAMING.value, 0)
     assert fear_hits > 0
 
@@ -78,8 +83,10 @@ def test_analyze_text_convenience():
 
 def test_compare_texts_convenience():
     result = compare_texts(
-        THOMAS_SAMPLE, HERMETIC_SAMPLE,
-        tradition_a="thomas", tradition_b="hermetic",
-        output_format="text"
+        THOMAS_SAMPLE,
+        HERMETIC_SAMPLE,
+        tradition_a="thomas",
+        tradition_b="hermetic",
+        output_format="text",
     )
     assert len(result) > 0
