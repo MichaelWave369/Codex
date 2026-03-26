@@ -98,7 +98,7 @@ The CI workflow runs:
 
 Please read [docs/ETHICS.md](docs/ETHICS.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before extending this project.
 
-## CODEX Operator Studio (Streamlit, v1.2)
+## CODEX Operator Studio (Streamlit, v1.3)
 
 CODEX Operator Studio is a local-first operator interface for running the existing CODEX engines without replacing CLI workflows.
 
@@ -112,6 +112,10 @@ CODEX Operator Studio is a local-first operator interface for running the existi
 - **Coherence charts**: per-passage line + level-distinguished scatter views.
 - **Pattern distribution chart**: compact counts by pattern type (filtered vs full set).
 - **Side-by-side comparison evidence**: two-column A/B reading in Shared Signals and Divergence tabs.
+- **Coherence navigation**: choose passage index and jump to highlighted passage context.
+- **Pattern ↔ passage linking**: pattern focus filters Filter Map; selected passage shows active patterns/evidence.
+- **Delta Lens (Compare)**: toggle display between all, strongest convergence, and strongest divergence views.
+- **Insight summaries**: deterministic overview summaries for Analyze and Compare tabs.
 - **Session export/import**: save and reload local session JSON (mode, inputs, latest result payloads).
 - Export actions for JSON, Markdown, dashboard text, and HTML.
 - Session-state-only behavior (no database in v1).

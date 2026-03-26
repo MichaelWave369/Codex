@@ -1,8 +1,9 @@
-"""Streamlit front-end for CODEX Operator Studio Interface v1.2."""
+"""Streamlit front-end for CODEX Operator Studio Interface v1.3."""
 
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 import streamlit as st
@@ -33,6 +34,105 @@ def _read_upload(upload: Any) -> str:
     if upload is None:
         return ""
     return upload.getvalue().decode("utf-8", errors="replace")
+
+
+def _extract_passage_index(ref: str) -> int | None:
+    if not ref:
+        return None
+    match = re.search(r"(?:passage|verse)\s*(\d+)", ref.lower())
+    if match:
+        return int(match.group(1))
+    digits = re.findall(r"\d+", ref)
+    return int(digits[0]) if digits else None
+
+
+def _build_pattern_passage_map(
+    matches: list[dict[str, Any]], passages: list[dict[str, Any]]
+) -> dict[int, list[dict[str, Any]]]:
+    passage_text_by_idx = {p.get("passage_index"): p.get("passage_text", "") for p in passages}
+    linked: dict[int, list[dict[str, Any]]] = {p.get("passage_index"): [] for p in passages}
+
+    for match in matches:
+        assigned = False
+        explicit_idx = _extract_passage_index(match.get("passage_ref", ""))
+        if explicit_idx in linked:
+            linked[explicit_idx].append(match)
+            continue
+
+        excerpts = [
+            e.get("excerpt", "").strip()
+            for e in match.get("evidence", [])
+            if e.get("excerpt", "").strip()
+        ]
+        for passage_index, passage_text in passage_text_by_idx.items():
+            if any(excerpt and excerpt in passage_text for excerpt in excerpts):
+                linked[passage_index].append(match)
+                assigned = True
+                break
+        if not assigned and passages:
+            linked[passages[0].get("passage_index")].append(match)
+    return linked
+
+
+def _analyze_summary(pattern_dict: dict[str, Any], filter_dict: dict[str, Any]) -> str:
+    matches = pattern_dict.get("matches", [])
+    passages = filter_dict.get("passages", [])
+    if not matches and not passages:
+        return "No analyzable signal available yet."
+
+    by_type: dict[str, int] = {}
+    for match in matches:
+        ptype = match.get("pattern_type", "UNKNOWN")
+        by_type[ptype] = by_type.get(ptype, 0) + 1
+    dominant = max(by_type, key=by_type.get) if by_type else "NONE"
+
+    ranked = sorted(
+        matches,
+        key=lambda m: (
+            m.get("confidence") != Confidence.STRUCTURAL.value,
+            m.get("confidence") != Confidence.HIGH.value,
+        ),
+    )
+    strongest = [m.get("pattern_type", "UNKNOWN") for m in ranked[:3]]
+
+    scores = [p.get("coherence_score", 0.0) for p in passages]
+    trend = "stable"
+    if len(scores) >= 2:
+        delta = scores[-1] - scores[0]
+        if delta > 0.08:
+            trend = "rising"
+        elif delta < -0.08:
+            trend = "declining"
+
+    return (
+        f"Dominant pattern: {dominant}. Strongest signals: {', '.join(strongest) or 'none'}. "
+        f"Coherence trend is {trend}. "
+        "Interpretation: the text shows patterned signal concentration with "
+        "passage-level coherence variability worth close reading."
+    )
+
+
+def _compare_summary(comparison_dict: dict[str, Any]) -> str:
+    shared = sorted(
+        comparison_dict.get("shared_signals", []),
+        key=lambda s: s.get("convergence_score", 0.0),
+        reverse=True,
+    )
+    divergence = sorted(
+        comparison_dict.get("divergence_signals", []),
+        key=lambda d: abs(d.get("density_strong", 0.0) - d.get("density_weak", 0.0)),
+        reverse=True,
+    )
+    strongest_shared = shared[0].get("pattern_type", "none") if shared else "none"
+    strongest_div = divergence[0].get("pattern_type", "none") if divergence else "none"
+    return (
+        f"Convergence index {comparison_dict.get('convergence_index', 0):.4f} "
+        f"({comparison_dict.get('convergence_state', 'UNKNOWN')}). "
+        f"Strongest shared principle: {strongest_shared}. "
+        f"Strongest divergence: {strongest_div}. "
+        "Interpretation: convergence and divergence coexist; prioritize high-score shared "
+        "signals while tracking the top density gaps."
+    )
 
 
 def _save_session_payload() -> dict[str, Any]:
@@ -246,6 +346,7 @@ def render_analyze() -> None:
     )
 
     with tab_overview:
+        st.info(_analyze_summary(pattern_dict, filter_dict))
         metric_cards(
             [
                 ("Word Count", str(pattern_dict.get("word_count", 0))),
@@ -279,9 +380,10 @@ def render_analyze() -> None:
         pattern_options = ["ALL"] + sorted({m.get("pattern_type", "") for m in matches})
         confidence_options = ["ALL"] + sorted({m.get("confidence", "") for m in matches})
 
+        st.session_state.setdefault("pattern_focus", "ALL")
         f1, f2, f3, f4 = st.columns(4)
         with f1:
-            selected_pattern = st.selectbox("Pattern type", pattern_options)
+            selected_pattern = st.selectbox("Pattern type", pattern_options, key="pattern_focus")
         with f2:
             selected_conf = st.selectbox("Confidence", confidence_options)
         with f3:
@@ -342,6 +444,41 @@ def render_analyze() -> None:
 
     with tab_filter:
         passages = filter_dict.get("passages", [])
+        pattern_map = _build_pattern_passage_map(pattern_dict.get("matches", []), passages)
+        pattern_focus = st.session_state.get("pattern_focus", "ALL")
+        passage_options = [p.get("passage_index") for p in passages]
+        if passage_options:
+            st.session_state.setdefault("selected_passage_index", passage_options[0])
+            selected_passage = st.selectbox(
+                "Passage navigator",
+                options=passage_options,
+                key="selected_passage_index",
+            )
+            selected_passage_data = next(
+                (p for p in passages if p.get("passage_index") == selected_passage),
+                None,
+            )
+            if selected_passage_data:
+                st.markdown(
+                    f"**Selected passage {selected_passage}** · "
+                    f"coherence `{selected_passage_data.get('coherence_score', 0):.3f}` · "
+                    f"`{selected_passage_data.get('coherence_level', 'UNKNOWN')}`"
+                )
+                linked_patterns = pattern_map.get(selected_passage, [])
+                if linked_patterns:
+                    st.caption("Patterns active in selected passage")
+                    for p in linked_patterns:
+                        st.markdown(
+                            f"- `{p.get('pattern_type', 'UNKNOWN')}` · "
+                            f"`{p.get('confidence', 'UNKNOWN')}`"
+                        )
+                        excerpts = [
+                            e.get("excerpt", "") for e in p.get("evidence", []) if e.get("excerpt")
+                        ]
+                        evidence_block(excerpts, "No evidence excerpts.")
+                else:
+                    st.caption("No linked pattern matches detected for selected passage.")
+
         if not passages:
             st.markdown(
                 '<div class="empty">No passage analyses available.</div>',
@@ -399,9 +536,16 @@ def render_analyze() -> None:
             idx = passage.get("passage_index", "?")
             score = passage.get("coherence_score", 0)
             level = passage.get("coherence_level", "UNKNOWN")
+            linked = pattern_map.get(idx, [])
+            if pattern_focus != "ALL":
+                linked_for_focus = [p for p in linked if p.get("pattern_type") == pattern_focus]
+                if not linked_for_focus:
+                    continue
+            is_selected = idx == st.session_state.get("selected_passage_index")
+            label_prefix = "⭐ " if is_selected else ""
             with st.expander(
-                f"Passage {idx} · coherence {score:.3f} · {level}",
-                expanded=False,
+                f"{label_prefix}Passage {idx} · coherence {score:.3f} · {level}",
+                expanded=is_selected,
             ):
                 st.write(passage.get("passage_text", passage.get("passage_preview", "")))
                 m1, m2, m3 = st.columns(3)
@@ -420,6 +564,13 @@ def render_analyze() -> None:
                             evidence_block([hit["excerpt"]])
                 else:
                     st.caption("No explicit hit excerpts recorded for this passage.")
+                if linked:
+                    st.write("Linked pattern matches:")
+                    for match in linked:
+                        st.markdown(
+                            f"- `{match.get('pattern_type', 'UNKNOWN')}` · "
+                            f"`{match.get('confidence', 'UNKNOWN')}`"
+                        )
 
     with tab_seams:
         seams = filter_dict.get("editorial_seams", [])
@@ -545,6 +696,7 @@ def render_compare() -> None:
     )
 
     with tab_overview:
+        st.info(_compare_summary(comparison_dict))
         metric_cards(
             [
                 ("Convergence Index", f"{comparison_dict.get('convergence_index', 0):.4f}"),
@@ -566,8 +718,23 @@ def render_compare() -> None:
             html_name="codex_compare.html",
         )
 
+    delta_lens = st.radio(
+        "Delta Lens",
+        options=["All", "Strongest Convergence", "Strongest Divergence"],
+        horizontal=True,
+        key="delta_lens_mode",
+    )
+
     with tab_shared:
-        shared = comparison_dict.get("shared_signals", [])
+        shared = sorted(
+            comparison_dict.get("shared_signals", []),
+            key=lambda s: s.get("convergence_score", 0.0),
+            reverse=True,
+        )
+        if delta_lens == "Strongest Convergence":
+            shared = shared[:5]
+        elif delta_lens == "Strongest Divergence":
+            shared = []
         if not shared:
             st.markdown(
                 '<div class="empty">No shared signals above threshold.</div>',
@@ -589,7 +756,15 @@ def render_compare() -> None:
                     evidence_block([signal.get("evidence_b", "")])
 
     with tab_div:
-        divergences = comparison_dict.get("divergence_signals", [])
+        divergences = sorted(
+            comparison_dict.get("divergence_signals", []),
+            key=lambda d: abs(d.get("density_strong", 0.0) - d.get("density_weak", 0.0)),
+            reverse=True,
+        )
+        if delta_lens == "Strongest Divergence":
+            divergences = divergences[:5]
+        elif delta_lens == "Strongest Convergence":
+            divergences = []
         if not divergences:
             st.markdown(
                 '<div class="empty">No major divergence signals detected.</div>',
@@ -623,7 +798,7 @@ mode = st.sidebar.radio(
 )
 st.session_state["mode"] = mode
 st.sidebar.markdown("---")
-st.sidebar.caption("Local-first interface. No remote persistence in v1.2.")
+st.sidebar.caption("Local-first interface. No remote persistence in v1.3.")
 
 session_upload = st.sidebar.file_uploader(
     "Import session (.json)",
@@ -652,4 +827,4 @@ else:
     render_compare()
 
 st.markdown("---")
-st.caption("CODEX Operator Studio v1.2 · additive UI layer over existing CODEX engines.")
+st.caption("CODEX Operator Studio v1.3 · additive UI layer over existing CODEX engines.")
