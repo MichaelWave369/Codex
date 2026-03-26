@@ -47,10 +47,10 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 
 from codex_tiekat_engine import (
-    CodexTIEKATReport,
-    PatternType,
-    Confidence,
     C_STAR,
+    CodexTIEKATReport,
+    Confidence,
+    PatternType,
     TIEKATPatternEngine,
 )
 
