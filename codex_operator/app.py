@@ -297,9 +297,7 @@ def _save_session_payload() -> dict[str, Any]:
             "project_name": st.session_state.get("project_name", ""),
             "operator": st.session_state.get("operator_label", ""),
             "tags": [
-                t.strip()
-                for t in st.session_state.get("project_tags", "").split(",")
-                if t.strip()
+                t.strip() for t in st.session_state.get("project_tags", "").split(",") if t.strip()
             ],
             "description": st.session_state.get("project_description", ""),
         },
@@ -1295,8 +1293,12 @@ def render_workspace() -> None:
 
     records = _list_workspace_bundles()
     if not records:
+        empty_html = (
+            '<div class="empty">Workspace is empty. '
+            "Save a session to create the first bundle.</div>"
+        )
         st.markdown(
-            '<div class="empty">Workspace is empty. Save a session to create the first bundle.</div>',
+            empty_html,
             unsafe_allow_html=True,
         )
         return
@@ -1342,6 +1344,10 @@ def render_workspace() -> None:
         )
     for idx, rec in enumerate(filtered_records):
         with st.container(border=True):
+            source_label = rec["source_labels"].get("analyze") or rec["source_labels"].get(
+                "compare_a"
+            )
+            tradition_label = rec["traditions"].get("analyze") or rec["traditions"].get("compare_a")
             st.markdown(f"**{rec['file_name']}** · `{rec['version']}` · `{rec['mode']}`")
             st.caption(f"Exported: {rec.get('exported_at', 'n/a')}")
             st.write(
@@ -1349,14 +1355,8 @@ def render_workspace() -> None:
                 f"Operator: {rec.get('operator') or '—'} | "
                 f"Tags: {', '.join(rec.get('tags', [])) or '—'}"
             )
-            st.write(
-                "Sources: "
-                f"{rec['source_labels'].get('analyze') or rec['source_labels'].get('compare_a') or '—'}"
-            )
-            st.write(
-                "Traditions: "
-                f"{rec['traditions'].get('analyze') or rec['traditions'].get('compare_a') or '—'}"
-            )
+            st.write(f"Sources: {source_label or '—'}")
+            st.write(f"Traditions: {tradition_label or '—'}")
             st.write(rec.get("summary_preview", ""))
             st.caption(f"Pins: {rec.get('pin_count', 0)} · Notes: {rec.get('note_count', 0)}")
             a1, a2 = st.columns(2)
@@ -1386,6 +1386,20 @@ def render_workspace() -> None:
     left_rec = next((r for r in records if r["file_name"] == left_bundle), None)
     right_rec = next((r for r in records if r["file_name"] == right_bundle), None)
     if left_rec and right_rec:
+        left_convergence_state = (
+            left_rec["bundle"]
+            .get("results", {})
+            .get("compare", {})
+            .get("comparison_dict", {})
+            .get("convergence_state", "n/a")
+        )
+        right_convergence_state = (
+            right_rec["bundle"]
+            .get("results", {})
+            .get("compare", {})
+            .get("comparison_dict", {})
+            .get("convergence_state", "n/a")
+        )
         c_left, c_right = st.columns(2)
         with c_left:
             st.markdown(f"**{left_rec['file_name']}**")
@@ -1394,10 +1408,7 @@ def render_workspace() -> None:
                 "Dominant pattern: "
                 f"{left_rec['bundle'].get('summaries', {}).get('analyze', '')[:80]}"
             )
-            st.write(
-                "Convergence state: "
-                f"{left_rec['bundle'].get('results', {}).get('compare', {}).get('comparison_dict', {}).get('convergence_state', 'n/a')}"
-            )
+            st.write(f"Convergence state: {left_convergence_state}")
             st.write(f"Notes: {left_rec['note_count']} · Pins: {left_rec['pin_count']}")
         with c_right:
             st.markdown(f"**{right_rec['file_name']}**")
@@ -1406,10 +1417,7 @@ def render_workspace() -> None:
                 "Dominant pattern: "
                 f"{right_rec['bundle'].get('summaries', {}).get('analyze', '')[:80]}"
             )
-            st.write(
-                "Convergence state: "
-                f"{right_rec['bundle'].get('results', {}).get('compare', {}).get('comparison_dict', {}).get('convergence_state', 'n/a')}"
-            )
+            st.write(f"Convergence state: {right_convergence_state}")
             st.write(f"Notes: {right_rec['note_count']} · Pins: {right_rec['pin_count']}")
 
     st.markdown("#### Findings Index")
