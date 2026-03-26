@@ -1,10 +1,11 @@
-"""Streamlit front-end for CODEX Operator Studio Interface v1.4."""
+"""Streamlit front-end for CODEX Operator Studio Interface v2.0."""
 
 from __future__ import annotations
 
 import json
 import re
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -29,13 +30,144 @@ init_state()
 header()
 
 KNOWN_TRADITIONS = TIEKATPatternEngine.KNOWN_TRADITIONS
-APP_VERSION = "v1.4"
+APP_VERSION = "v2.0"
 
 
 def _read_upload(upload: Any) -> str:
     if upload is None:
         return ""
     return upload.getvalue().decode("utf-8", errors="replace")
+
+
+def _workspace_dir() -> Path:
+    path = Path(".codex_workspace")
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _bundle_summary_preview(bundle: dict[str, Any]) -> str:
+    summary = bundle.get("summaries", {}).get("analyze") or bundle.get("summaries", {}).get(
+        "compare"
+    )
+    if summary:
+        return summary[:140]
+    return "No summary available."
+
+
+def _flatten_notes(notes_obj: Any) -> list[str]:
+    if isinstance(notes_obj, str):
+        return [notes_obj]
+    if isinstance(notes_obj, dict):
+        out: list[str] = []
+        for value in notes_obj.values():
+            out.extend(_flatten_notes(value))
+        return out
+    if isinstance(notes_obj, list):
+        out: list[str] = []
+        for value in notes_obj:
+            out.extend(_flatten_notes(value))
+        return out
+    return []
+
+
+def _bundle_note_count(bundle: dict[str, Any]) -> int:
+    return len([n for n in _flatten_notes(bundle.get("notes", {})) if n.strip()])
+
+
+def _list_workspace_bundles() -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for json_path in sorted(_workspace_dir().glob("*.json")):
+        try:
+            bundle = json.loads(json_path.read_text(encoding="utf-8"))
+            metadata = bundle.get("metadata", {})
+            tags = metadata.get("tags", [])
+            if isinstance(tags, str):
+                tags = [t.strip() for t in tags.split(",") if t.strip()]
+            records.append(
+                {
+                    "path": json_path,
+                    "file_name": json_path.name,
+                    "bundle": bundle,
+                    "version": bundle.get("version", "unknown"),
+                    "exported_at": bundle.get("exported_at", ""),
+                    "mode": bundle.get("mode", "unknown"),
+                    "project_name": metadata.get("project_name", ""),
+                    "operator": metadata.get("operator", ""),
+                    "tags": tags,
+                    "description": metadata.get("description", ""),
+                    "summary_preview": _bundle_summary_preview(bundle),
+                    "pin_count": len(bundle.get("pins", [])),
+                    "note_count": _bundle_note_count(bundle),
+                    "source_labels": {
+                        "analyze": bundle.get("inputs", {}).get("analyze_source", ""),
+                        "compare_a": bundle.get("inputs", {}).get("compare_source_a", ""),
+                        "compare_b": bundle.get("inputs", {}).get("compare_source_b", ""),
+                    },
+                    "traditions": {
+                        "analyze": bundle.get("inputs", {}).get("analyze_tradition", ""),
+                        "compare_a": bundle.get("inputs", {}).get("compare_tradition_a", ""),
+                        "compare_b": bundle.get("inputs", {}).get("compare_tradition_b", ""),
+                    },
+                }
+            )
+        except Exception:
+            continue
+    return records
+
+
+def _slug(value: str) -> str:
+    cleaned = re.sub(r"[^a-zA-Z0-9_-]+", "-", value.strip().lower()).strip("-")
+    return cleaned or "workspace"
+
+
+def _save_bundle_to_workspace(bundle: dict[str, Any]) -> Path:
+    meta = bundle.get("metadata", {})
+    hint = _slug(
+        meta.get("project_name", "") or bundle.get("inputs", {}).get("analyze_source", "session")
+    )
+    stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+    out_path = _workspace_dir() / f"{hint}_{stamp}.json"
+    out_path.write_text(json.dumps(bundle, indent=2, ensure_ascii=False), encoding="utf-8")
+    return out_path
+
+
+def _delete_workspace_bundle(path: Path) -> None:
+    if path.exists():
+        path.unlink()
+
+
+def _aggregate_workspace_findings(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for rec in records:
+        bundle = rec["bundle"]
+        for pin in bundle.get("pins", []):
+            rows.append(
+                {
+                    "finding_type": pin.get("item_type", "unknown"),
+                    "project": rec.get("project_name") or rec.get("file_name"),
+                    "bundle_file": rec.get("file_name"),
+                    "label": pin.get("label", ""),
+                    "excerpt": pin.get("excerpt", ""),
+                    "note": pin.get("analyst_note", ""),
+                }
+            )
+    return rows
+
+
+def _aggregate_workspace_notes(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for rec in records:
+        flattened = _flatten_notes(rec["bundle"].get("notes", {}))
+        for note in flattened:
+            if note.strip():
+                rows.append(
+                    {
+                        "project": rec.get("project_name") or rec.get("file_name"),
+                        "bundle_file": rec.get("file_name"),
+                        "note_preview": note[:220],
+                    }
+                )
+    return rows
 
 
 def _ensure_workspace_state() -> None:
@@ -47,6 +179,10 @@ def _ensure_workspace_state() -> None:
         },
     )
     st.session_state.setdefault("pinned_findings", [])
+    st.session_state.setdefault("project_name", "")
+    st.session_state.setdefault("operator_label", "")
+    st.session_state.setdefault("project_tags", "")
+    st.session_state.setdefault("project_description", "")
 
 
 def _extract_passage_index(ref: str) -> int | None:
@@ -155,7 +291,18 @@ def _save_session_payload() -> dict[str, Any]:
         "version": APP_VERSION,
         "exported_at": datetime.now(UTC).isoformat(),
         "mode": st.session_state.get("mode", "Analyze"),
-        "metadata": {"app": "CODEX Operator Studio", "schema": "analysis_bundle"},
+        "metadata": {
+            "app": "CODEX Operator Studio",
+            "schema": "analysis_bundle",
+            "project_name": st.session_state.get("project_name", ""),
+            "operator": st.session_state.get("operator_label", ""),
+            "tags": [
+                t.strip()
+                for t in st.session_state.get("project_tags", "").split(",")
+                if t.strip()
+            ],
+            "description": st.session_state.get("project_description", ""),
+        },
         "inputs": {
             "analyze_text": st.session_state.get("analyze_text", ""),
             "analyze_source": st.session_state.get("analyze_source", "Operator Input"),
@@ -206,6 +353,14 @@ def _save_session_payload() -> dict[str, Any]:
 def _load_session_payload(payload: dict[str, Any]) -> None:
     if "version" in payload and "inputs" in payload and "results" in payload:
         st.session_state["mode"] = payload.get("mode", "Analyze")
+        meta = payload.get("metadata", {})
+        tags = meta.get("tags", [])
+        if isinstance(tags, list):
+            tags = ", ".join(tags)
+        st.session_state["project_name"] = meta.get("project_name", "")
+        st.session_state["operator_label"] = meta.get("operator", "")
+        st.session_state["project_tags"] = tags or ""
+        st.session_state["project_description"] = meta.get("description", "")
         for key, value in payload.get("inputs", {}).items():
             st.session_state[key] = value
         for key, value in payload.get("ui_state", {}).items():
@@ -244,6 +399,10 @@ def _load_session_payload(payload: dict[str, Any]) -> None:
         return
 
     # Backward compatibility with pre-v1.4 payloads.
+    st.session_state["project_name"] = payload.get("metadata", {}).get("project_name", "")
+    st.session_state["operator_label"] = payload.get("metadata", {}).get("operator", "")
+    st.session_state["project_tags"] = ""
+    st.session_state["project_description"] = payload.get("metadata", {}).get("description", "")
     inputs = payload.get("inputs", {})
     for key, value in inputs.items():
         st.session_state[key] = value
@@ -1085,16 +1244,225 @@ def render_compare() -> None:
         json_panel(comparison_dict, "codex_compare_raw")
 
 
+def render_workspace() -> None:
+    st.subheader("Workspace")
+    st.caption("Local bundle library in `.codex_workspace/`.")
+
+    meta_cols = st.columns(2)
+    with meta_cols[0]:
+        st.session_state["project_name"] = st.text_input(
+            "Project name",
+            value=st.session_state.get("project_name", ""),
+            key="ws_project_name",
+        )
+        st.session_state["operator_label"] = st.text_input(
+            "Operator",
+            value=st.session_state.get("operator_label", ""),
+            key="ws_operator",
+        )
+    with meta_cols[1]:
+        st.session_state["project_tags"] = st.text_input(
+            "Tags (comma separated)",
+            value=st.session_state.get("project_tags", ""),
+            key="ws_tags",
+        )
+        st.session_state["project_description"] = st.text_area(
+            "Description",
+            value=st.session_state.get("project_description", ""),
+            key="ws_description",
+            height=100,
+        )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("Save current session to workspace", use_container_width=True):
+            try:
+                bundle_path = _save_bundle_to_workspace(_save_session_payload())
+                st.success(f"Saved bundle: {bundle_path}")
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Failed to save bundle: {exc}")
+    with c2:
+        if st.button("Refresh workspace", use_container_width=True):
+            st.rerun()
+    with c3:
+        st.download_button(
+            "Export current bundle",
+            data=json.dumps(_save_session_payload(), indent=2, ensure_ascii=False),
+            file_name="codex_operator_bundle_v2_0.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+
+    records = _list_workspace_bundles()
+    if not records:
+        st.markdown(
+            '<div class="empty">Workspace is empty. Save a session to create the first bundle.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    st.markdown("#### Workspace Browser")
+    f1, f2, f3, f4, f5 = st.columns(5)
+    with f1:
+        mode_filter = st.selectbox("Mode filter", options=["All", "Analyze", "Compare"])
+    with f2:
+        project_filter = st.text_input("Project contains", "")
+    with f3:
+        operator_filter = st.text_input("Operator contains", "")
+    with f4:
+        tag_filter = st.text_input("Tag contains", "")
+    with f5:
+        query_filter = st.text_input("Search text", "")
+
+    filtered_records = []
+    for rec in records:
+        if mode_filter != "All" and rec["mode"] != mode_filter:
+            continue
+        if project_filter.lower() not in rec.get("project_name", "").lower():
+            continue
+        if operator_filter.lower() not in rec.get("operator", "").lower():
+            continue
+        if tag_filter and not any(tag_filter.lower() in t.lower() for t in rec.get("tags", [])):
+            continue
+        haystack = " ".join(
+            [
+                rec.get("summary_preview", ""),
+                " ".join(_flatten_notes(rec["bundle"].get("notes", {}))),
+                " ".join([p.get("label", "") for p in rec["bundle"].get("pins", [])]),
+            ]
+        ).lower()
+        if query_filter.lower() not in haystack:
+            continue
+        filtered_records.append(rec)
+
+    if not filtered_records:
+        st.markdown(
+            '<div class="empty">No bundles match current filters.</div>',
+            unsafe_allow_html=True,
+        )
+    for idx, rec in enumerate(filtered_records):
+        with st.container(border=True):
+            st.markdown(f"**{rec['file_name']}** · `{rec['version']}` · `{rec['mode']}`")
+            st.caption(f"Exported: {rec.get('exported_at', 'n/a')}")
+            st.write(
+                f"Project: {rec.get('project_name') or '—'} | "
+                f"Operator: {rec.get('operator') or '—'} | "
+                f"Tags: {', '.join(rec.get('tags', [])) or '—'}"
+            )
+            st.write(
+                "Sources: "
+                f"{rec['source_labels'].get('analyze') or rec['source_labels'].get('compare_a') or '—'}"
+            )
+            st.write(
+                "Traditions: "
+                f"{rec['traditions'].get('analyze') or rec['traditions'].get('compare_a') or '—'}"
+            )
+            st.write(rec.get("summary_preview", ""))
+            st.caption(f"Pins: {rec.get('pin_count', 0)} · Notes: {rec.get('note_count', 0)}")
+            a1, a2 = st.columns(2)
+            with a1:
+                if st.button("Load", key=f"ws_load_{idx}", use_container_width=True):
+                    _load_session_payload(rec["bundle"])
+                    st.success(f"Loaded {rec['file_name']} into active session.")
+            with a2:
+                confirm_key = f"ws_confirm_delete_{idx}"
+                if st.button("Delete", key=f"ws_delete_{idx}", use_container_width=True):
+                    st.session_state[confirm_key] = True
+                if st.session_state.get(confirm_key):
+                    if st.button(
+                        "Confirm delete", key=f"ws_delete_yes_{idx}", use_container_width=True
+                    ):
+                        _delete_workspace_bundle(rec["path"])
+                        st.success(f"Deleted {rec['file_name']}.")
+                        st.rerun()
+
+    st.markdown("#### Bundle Comparison")
+    bundle_options = [rec["file_name"] for rec in records]
+    b1, b2 = st.columns(2)
+    with b1:
+        left_bundle = st.selectbox("Bundle A", options=bundle_options, key="ws_cmp_a")
+    with b2:
+        right_bundle = st.selectbox("Bundle B", options=bundle_options, key="ws_cmp_b")
+    left_rec = next((r for r in records if r["file_name"] == left_bundle), None)
+    right_rec = next((r for r in records if r["file_name"] == right_bundle), None)
+    if left_rec and right_rec:
+        c_left, c_right = st.columns(2)
+        with c_left:
+            st.markdown(f"**{left_rec['file_name']}**")
+            st.write(f"Mode: {left_rec['mode']}")
+            st.write(
+                "Dominant pattern: "
+                f"{left_rec['bundle'].get('summaries', {}).get('analyze', '')[:80]}"
+            )
+            st.write(
+                "Convergence state: "
+                f"{left_rec['bundle'].get('results', {}).get('compare', {}).get('comparison_dict', {}).get('convergence_state', 'n/a')}"
+            )
+            st.write(f"Notes: {left_rec['note_count']} · Pins: {left_rec['pin_count']}")
+        with c_right:
+            st.markdown(f"**{right_rec['file_name']}**")
+            st.write(f"Mode: {right_rec['mode']}")
+            st.write(
+                "Dominant pattern: "
+                f"{right_rec['bundle'].get('summaries', {}).get('analyze', '')[:80]}"
+            )
+            st.write(
+                "Convergence state: "
+                f"{right_rec['bundle'].get('results', {}).get('compare', {}).get('comparison_dict', {}).get('convergence_state', 'n/a')}"
+            )
+            st.write(f"Notes: {right_rec['note_count']} · Pins: {right_rec['pin_count']}")
+
+    st.markdown("#### Findings Index")
+    findings_rows = _aggregate_workspace_findings(filtered_records)
+    finding_types = (
+        ["All"] + sorted({row["finding_type"] for row in findings_rows})
+        if findings_rows
+        else ["All"]
+    )
+    selected_type = st.selectbox("Finding type", options=finding_types, key="ws_find_type")
+    filtered_findings = [
+        row
+        for row in findings_rows
+        if selected_type == "All" or row["finding_type"] == selected_type
+    ]
+    if not filtered_findings:
+        st.markdown(
+            '<div class="empty">No findings available for current filter.</div>',
+            unsafe_allow_html=True,
+        )
+    for row in filtered_findings:
+        with st.container(border=True):
+            st.markdown(f"**{row['label']}** · `{row['finding_type']}`")
+            st.caption(f"{row['project']} · {row['bundle_file']}")
+            st.write(row["excerpt"])
+            if row.get("note"):
+                st.write(f"Note: {row['note']}")
+
+    st.markdown("#### Notes Index")
+    notes_rows = _aggregate_workspace_notes(filtered_records)
+    note_query = st.text_input("Search notes", key="ws_note_search")
+    filtered_notes = [n for n in notes_rows if note_query.lower() in n["note_preview"].lower()]
+    if not filtered_notes:
+        st.markdown(
+            '<div class="empty">No notes match current query.</div>',
+            unsafe_allow_html=True,
+        )
+    for note in filtered_notes:
+        with st.container(border=True):
+            st.caption(f"{note['project']} · {note['bundle_file']}")
+            st.write(note["note_preview"])
+
+
 _ensure_workspace_state()
 
 mode = st.sidebar.radio(
     "Mode",
-    ["Analyze", "Compare"],
-    index=0 if st.session_state["mode"] == "Analyze" else 1,
+    ["Analyze", "Compare", "Workspace"],
+    index=["Analyze", "Compare", "Workspace"].index(st.session_state.get("mode", "Analyze")),
 )
 st.session_state["mode"] = mode
 st.sidebar.markdown("---")
-st.sidebar.caption("Local-first interface. No remote persistence in v1.4.")
+st.sidebar.caption("Local-first interface. No remote persistence in v2.0.")
 
 session_upload = st.sidebar.file_uploader(
     "Import analysis bundle (.json)",
@@ -1119,8 +1487,10 @@ st.sidebar.download_button(
 
 if mode == "Analyze":
     render_analyze()
-else:
+elif mode == "Compare":
     render_compare()
+else:
+    render_workspace()
 
 st.markdown("---")
-st.caption("CODEX Operator Studio v1.4 · additive UI layer over existing CODEX engines.")
+st.caption("CODEX Operator Studio v2.0 · local knowledge workspace over CODEX engines.")
