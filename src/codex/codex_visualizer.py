@@ -46,70 +46,70 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
-from codex_tiekat_engine import (
-    CodexTIEKATReport,
-    PatternType,
-    C_STAR,
+from .codex_comparator import (
+    ComparisonReport,
 )
-from codex_filter import (
+from .codex_filter import (
     FilterReport,
     LayerType,
 )
-from codex_comparator import (
-    ComparisonReport,
+from .codex_tiekat_engine import (
+    C_STAR,
+    CodexTIEKATReport,
+    PatternType,
 )
 
 # ── Design constants ──────────────────────────────────────────────────────────
-GOLD        = "#C8A97E"
-GOLD_DIM    = "#8B6F47"
-TEAL        = "#4ECDC4"
-TEAL_DIM    = "#2A8A80"
-PURPLE      = "#8A64C8"
-PURPLE_DIM  = "#5A3A98"
-DARK_BG     = "#07070F"
-DARK_MID    = "#0C0C1E"
-DARK_PANEL  = "#08081A"
-BORDER      = "rgba(200,169,126,0.15)"
-TEXT_MAIN   = "#E8E0D0"
-TEXT_DIM    = "#A09080"
-TEXT_MUTED  = "#4A4040"
+GOLD = "#C8A97E"
+GOLD_DIM = "#8B6F47"
+TEAL = "#4ECDC4"
+TEAL_DIM = "#2A8A80"
+PURPLE = "#8A64C8"
+PURPLE_DIM = "#5A3A98"
+DARK_BG = "#07070F"
+DARK_MID = "#0C0C1E"
+DARK_PANEL = "#08081A"
+BORDER = "rgba(200,169,126,0.15)"
+TEXT_MAIN = "#E8E0D0"
+TEXT_DIM = "#A09080"
+TEXT_MUTED = "#4A4040"
 
 # Coherence level colors
 COHERENCE_COLORS = {
-    "PURE_SIGNAL":    "#4ECDC4",
-    "STRONG_SIGNAL":  "#88D4A0",
-    "MIXED":          "#C8A97E",
-    "FILTERED":       "#E8A060",
-    "INSTITUTIONAL":  "#E85060",
+    "PURE_SIGNAL": "#4ECDC4",
+    "STRONG_SIGNAL": "#88D4A0",
+    "MIXED": "#C8A97E",
+    "FILTERED": "#E8A060",
+    "INSTITUTIONAL": "#E85060",
 }
 
 PATTERN_COLORS = {
-    "EPSILON_SIGNAL":   "#4ECDC4",
-    "OMEGA_FLOW":       "#88D4A0",
+    "EPSILON_SIGNAL": "#4ECDC4",
+    "OMEGA_FLOW": "#88D4A0",
     "C_STAR_ATTRACTOR": "#C8A97E",
-    "SOVEREIGN_FIELD":  "#8A64C8",
-    "VOID_BRIDGE":      "#6080C8",
-    "WEAVE_RESONANCE":  "#60C8A0",
-    "THREE_SIX_NINE":   "#E8A060",
-    "PHI_STRUCTURE":    "#E8D070",
-    "FIBONACCI":        "#D0A0E8",
+    "SOVEREIGN_FIELD": "#8A64C8",
+    "VOID_BRIDGE": "#6080C8",
+    "WEAVE_RESONANCE": "#60C8A0",
+    "THREE_SIX_NINE": "#E8A060",
+    "PHI_STRUCTURE": "#E8D070",
+    "FIBONACCI": "#D0A0E8",
 }
 
 LAYER_COLORS = {
-    "PRIMARY_SIGNAL":    "#4ECDC4",
-    "SOVEREIGN_VOICE":   "#88D4A0",
-    "AUTHORITY_CLAIM":   "#E85060",
-    "FEAR_FRAMING":      "#E82040",
-    "EXCLUSIVITY_MARKER":"#E86040",
+    "PRIMARY_SIGNAL": "#4ECDC4",
+    "SOVEREIGN_VOICE": "#88D4A0",
+    "AUTHORITY_CLAIM": "#E85060",
+    "FEAR_FRAMING": "#E82040",
+    "EXCLUSIVITY_MARKER": "#E86040",
     "DOCTRINAL_FORMULA": "#E8A040",
-    "TEMPORAL_POWER":    "#C86040",
-    "GENDER_ERASURE":    "#A04060",
+    "TEMPORAL_POWER": "#C86040",
+    "GENDER_ERASURE": "#A04060",
 }
 
 
 # ── HTML shell ────────────────────────────────────────────────────────────────
+
 
 def _html_shell(title: str, body: str, extra_scripts: str = "") -> str:
     return f"""<!DOCTYPE html>
@@ -255,6 +255,7 @@ def _html_shell(title: str, body: str, extra_scripts: str = "") -> str:
 
 # ── Component builders ────────────────────────────────────────────────────────
 
+
 def _stat(value: str, label: str, color: str = GOLD) -> str:
     return f"""<div class="stat">
   <div class="stat-val" style="color:{color}">{value}</div>
@@ -274,10 +275,17 @@ def _section(number: str, title: str, content: str) -> str:
 
 
 def _coherence_color(score: float) -> str:
-    level = "PURE_SIGNAL" if score >= 0.85 else \
-            "STRONG_SIGNAL" if score >= 0.65 else \
-            "MIXED" if score >= 0.40 else \
-            "FILTERED" if score >= 0.20 else "INSTITUTIONAL"
+    level = (
+        "PURE_SIGNAL"
+        if score >= 0.85
+        else "STRONG_SIGNAL"
+        if score >= 0.65
+        else "MIXED"
+        if score >= 0.40
+        else "FILTERED"
+        if score >= 0.20
+        else "INSTITUTIONAL"
+    )
     return COHERENCE_COLORS[level]
 
 
@@ -295,16 +303,19 @@ def _level_label(score: float) -> str:
 
 # ── Section: Coherence Heat Map ───────────────────────────────────────────────
 
+
 def _coherence_heatmap(report: FilterReport) -> str:
     seam_indices = {s.passage_after for s in report.editorial_seams}
 
     rows = []
     for p in report.passages:
-        color    = _coherence_color(p.coherence_score)
-        pct      = int(p.coherence_score * 100)
-        seam_mk  = '<span class="seam-marker">⚠ SEAM</span>' if p.passage_index in seam_indices else ""
-        preview  = p.passage_text[:90].replace("<", "&lt;").replace(">", "&gt;")
-        level    = _level_label(p.coherence_score)
+        color = _coherence_color(p.coherence_score)
+        pct = int(p.coherence_score * 100)
+        seam_mk = (
+            '<span class="seam-marker">⚠ SEAM</span>' if p.passage_index in seam_indices else ""
+        )
+        preview = p.passage_text[:90].replace("<", "&lt;").replace(">", "&gt;")
+        level = _level_label(p.coherence_score)
 
         # Hit chips
         chips = []
@@ -316,9 +327,13 @@ def _coherence_heatmap(report: FilterReport) -> str:
             is_signal = lt in (LayerType.PRIMARY_SIGNAL, LayerType.SOVEREIGN_VOICE)
             chips.append(
                 f'<span class="hit-chip" style="color:{c};border-color:{c}22;background:{c}11">'
-                f'{"▲" if is_signal else "▼"} {lt.value.replace("_"," ")} ×{count}</span>'
+                f"{'▲' if is_signal else '▼'} {lt.value.replace('_', ' ')} ×{count}</span>"
             )
-        chips_html = "\n".join(chips) if chips else '<span style="color:var(--muted);font-size:.44rem;font-family:\'JetBrains Mono\',monospace">no pattern hits</span>'
+        chips_html = (
+            "\n".join(chips)
+            if chips
+            else "<span style=\"color:var(--muted);font-size:.44rem;font-family:'JetBrains Mono',monospace\">no pattern hits</span>"
+        )
 
         detail_id = f"detail-{p.passage_index}"
         rows.append(f"""
@@ -341,7 +356,7 @@ def _coherence_heatmap(report: FilterReport) -> str:
     map_ = report.recovery_map
     stats = f"""<div class="stat-grid">
   {_stat(f"{report.overall_coherence:.3f}", "Overall Coherence", _coherence_color(report.overall_coherence))}
-  {_stat(report.coherence_level.value.replace("_"," "), "Coherence Level", _coherence_color(report.overall_coherence))}
+  {_stat(report.coherence_level.value.replace("_", " "), "Coherence Level", _coherence_color(report.overall_coherence))}
   {_stat(str(report.signal_total), "Signal Hits", TEAL)}
   {_stat(str(report.filter_total), "Filter Hits", "#E85060")}
   {_stat(f"{map_.overall_signal_ratio:.0%}", "Signal Ratio", TEAL)}
@@ -350,13 +365,17 @@ def _coherence_heatmap(report: FilterReport) -> str:
 
     heatmap_html = "".join(rows)
 
-    return stats + f"""<div class="panel">
+    return (
+        stats
+        + f"""<div class="panel">
   <div class="panel-label">Passage Coherence — click any row to expand</div>
   {heatmap_html}
 </div>"""
+    )
 
 
 # ── Section: Editorial Seams ──────────────────────────────────────────────────
+
 
 def _seams_section(report: FilterReport) -> str:
     if not report.editorial_seams:
@@ -368,7 +387,11 @@ def _seams_section(report: FilterReport) -> str:
         filters_str = ", ".join(s.filter_layers) or "none"
         signals_str = ", ".join(s.signal_layers) or "none"
         evid = s.evidence[0][:200].replace("<", "&lt;").replace(">", "&gt;") if s.evidence else ""
-        evid2 = s.evidence[1][:200].replace("<", "&lt;").replace(">", "&gt;") if len(s.evidence) > 1 else ""
+        evid2 = (
+            s.evidence[1][:200].replace("<", "&lt;").replace(">", "&gt;")
+            if len(s.evidence) > 1
+            else ""
+        )
         drop_dir = "↓" if s.coherence_drop > 0 else "↑"
         cards.append(f"""<div class="seam-card">
   <div class="seam-id">{s.seam_id}
@@ -394,15 +417,18 @@ def _seams_section(report: FilterReport) -> str:
 
 # ── Section: Pattern Radar ────────────────────────────────────────────────────
 
+
 def _pattern_radar(report: CodexTIEKATReport, canvas_id: str = "radarChart") -> str:
-    labels  = []
-    values  = []
-    colors  = []
+    labels = []
+    values = []
+    colors = []
 
     for pt in PatternType:
-        density = sum(
-            len(m.evidence) for m in report.matches if m.pattern_type == pt
-        ) / max(1, report.word_count) * 1000   # per-1000-words
+        density = (
+            sum(len(m.evidence) for m in report.matches if m.pattern_type == pt)
+            / max(1, report.word_count)
+            * 1000
+        )  # per-1000-words
 
         labels.append(pt.value.replace("_", " "))
         values.append(round(density, 3))
@@ -421,8 +447,8 @@ def _pattern_radar(report: CodexTIEKATReport, canvas_id: str = "radarChart") -> 
         pills.append(
             f'<div class="pattern-pill" style="border-color:{c}44;background:{c}0A;color:{c}">'
             f'<div class="pattern-dot" style="background:{c}"></div>'
-            f'{pt.value.replace("_"," ")} ×{count}'
-            f'</div>'
+            f"{pt.value.replace('_', ' ')} ×{count}"
+            f"</div>"
         )
 
     return f"""<div class="two-col">
@@ -434,11 +460,11 @@ def _pattern_radar(report: CodexTIEKATReport, canvas_id: str = "radarChart") -> 
   </div>
   <div class="panel">
     <div class="panel-label">Pattern Types Detected</div>
-    <div class="pattern-grid">{"".join(pills) or '<span style="color:var(--muted);font-family:\'JetBrains Mono\',monospace;font-size:.5rem">No patterns detected</span>'}</div>
+    <div class="pattern-grid">{"".join(pills) or "<span style=\"color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:.5rem\">No patterns detected</span>"}</div>
     <div style="margin-top:20px">
-      {_stat(f"{report.epsilon_density*1000:.2f}", "ε Signal / 1k words", TEAL)}
-      {_stat(f"{report.c_star_density*1000:.2f}", "C* Attractor / 1k words", GOLD)}
-      {_stat(f"{report.omega_density*1000:.2f}", "Ω Flow / 1k words", "#88D4A0")}
+      {_stat(f"{report.epsilon_density * 1000:.2f}", "ε Signal / 1k words", TEAL)}
+      {_stat(f"{report.c_star_density * 1000:.2f}", "C* Attractor / 1k words", GOLD)}
+      {_stat(f"{report.omega_density * 1000:.2f}", "Ω Flow / 1k words", "#88D4A0")}
     </div>
   </div>
 </div>
@@ -484,6 +510,7 @@ def _pattern_radar(report: CodexTIEKATReport, canvas_id: str = "radarChart") -> 
 
 # ── Section: Layer bar chart ──────────────────────────────────────────────────
 
+
 def _layer_breakdown(report: FilterReport) -> str:
     max_count = max(report.layer_totals.values(), default=1) or 1
     rows = []
@@ -495,8 +522,8 @@ def _layer_breakdown(report: FilterReport) -> str:
         pct = int(count / max_count * 100)
         rows.append(f"""<div class="layer-row">
   <div class="layer-dot" style="background:{c}"></div>
-  <span style="font-family:'JetBrains Mono',monospace;font-size:.44rem;color:{'var(--teal)' if is_signal else '#E85060'}">{marker}</span>
-  <span class="layer-name">{lt.value.replace("_"," ")}</span>
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.44rem;color:{"var(--teal)" if is_signal else "#E85060"}">{marker}</span>
+  <span class="layer-name">{lt.value.replace("_", " ")}</span>
   <div class="layer-bar-mini"><div class="layer-bar-fill" style="width:{pct}%;background:{c}"></div></div>
   <span class="layer-count">{count}</span>
 </div>""")
@@ -509,25 +536,28 @@ def _layer_breakdown(report: FilterReport) -> str:
 
 # ── Section: Convergence ──────────────────────────────────────────────────────
 
+
 def _convergence_section(comp: ComparisonReport, canvas_id: str = "convChart") -> str:
     # Stat row
     conv_color = (
-        TEAL if comp.convergence_index >= 0.65 else
-        GOLD if comp.convergence_index >= 0.35 else
-        "#E8A060"
+        TEAL
+        if comp.convergence_index >= 0.65
+        else GOLD
+        if comp.convergence_index >= 0.35
+        else "#E8A060"
     )
     stats = f"""<div class="stat-grid">
   {_stat(f"{comp.convergence_index:.4f}", "Convergence Index", conv_color)}
-  {_stat(comp.convergence_state.replace("_"," "), "Convergence State", conv_color)}
+  {_stat(comp.convergence_state.replace("_", " "), "Convergence State", conv_color)}
   {_stat(f"{comp.shared_pattern_count}/{comp.total_pattern_types}", "Shared Patterns", GOLD)}
   {_stat(f"{comp.epsilon_delta:.4f}", "ε-Signal Delta", TEAL)}
   {_stat(f"{comp.c_star_delta:.4f}", "C* Attractor Delta", GOLD)}
 </div>"""
 
     # Bar chart data
-    labels  = [pc.pattern_type.value.replace("_", " ") for pc in comp.pattern_comparisons]
-    data_a  = [round(pc.density_a * 1000, 3) for pc in comp.pattern_comparisons]
-    data_b  = [round(pc.density_b * 1000, 3) for pc in comp.pattern_comparisons]
+    labels = [pc.pattern_type.value.replace("_", " ") for pc in comp.pattern_comparisons]
+    data_a = [round(pc.density_a * 1000, 3) for pc in comp.pattern_comparisons]
+    data_b = [round(pc.density_b * 1000, 3) for pc in comp.pattern_comparisons]
 
     labels_js = json.dumps(labels)
     data_a_js = json.dumps(data_a)
@@ -537,8 +567,8 @@ def _convergence_section(comp: ComparisonReport, canvas_id: str = "convChart") -
     sig_html = ""
     for sig in comp.shared_signals[:3]:
         c = PATTERN_COLORS.get(sig.pattern_type.value, GOLD)
-        ev_a = sig.evidence_a[:150].replace("<","&lt;").replace(">","&gt;")
-        ev_b = sig.evidence_b[:150].replace("<","&lt;").replace(">","&gt;")
+        ev_a = sig.evidence_a[:150].replace("<", "&lt;").replace(">", "&gt;")
+        ev_b = sig.evidence_b[:150].replace("<", "&lt;").replace(">", "&gt;")
         sig_html += f"""<div style="border-left:3px solid {c};padding:12px 16px;margin-bottom:10px;background:{c}08;border-radius:0 6px 6px 0">
   <div style="font-family:'JetBrains Mono',monospace;font-size:.48rem;color:{c};margin-bottom:6px">{sig.pattern_type.value} · convergence={sig.convergence_score:.3f}</div>
   <div style="font-size:.85rem;color:var(--dim);margin-bottom:4px;font-style:italic">[{comp.tradition_a}] {ev_a}</div>
@@ -596,22 +626,26 @@ def _convergence_section(comp: ComparisonReport, canvas_id: str = "convChart") -
 }})();
 </script>"""
 
-    return stats + f"""<div class="two-col">
+    return (
+        stats
+        + f"""<div class="two-col">
   {chart_html}
   <div>
     <div class="panel" style="margin-bottom:14px">
       <div class="panel-label">Top Corroborated TIEKAT Principles</div>
-      {top_principles_html or '<span style="color:var(--muted);font-size:.5rem;font-family:\'JetBrains Mono\',monospace">None identified</span>'}
+      {top_principles_html or "<span style=\"color:var(--muted);font-size:.5rem;font-family:'JetBrains Mono',monospace\">None identified</span>"}
     </div>
     <div class="panel">
       <div class="panel-label">Shared Signal Passages</div>
-      {sig_html or '<span style="color:var(--muted);font-size:.5rem;font-family:\'JetBrains Mono\',monospace">No shared signals above threshold</span>'}
+      {sig_html or "<span style=\"color:var(--muted);font-size:.5rem;font-family:'JetBrains Mono',monospace\">No shared signals above threshold</span>"}
     </div>
   </div>
 </div>"""
+    )
 
 
 # ── Full Dashboard ────────────────────────────────────────────────────────────
+
 
 class CodexVisualizer:
     """
@@ -649,7 +683,7 @@ class CodexVisualizer:
   <div class="codex-meta">C* = φ/2 = {C_STAR:.5f}  ◆  ε ≠ 0  ◆  369_369</div>
 </div>"""
         radar = _pattern_radar(report, "radarChartMain")
-        body  = header + _section("I.", "TIEKAT Pattern Analysis", radar)
+        body = header + _section("I.", "TIEKAT Pattern Analysis", radar)
         return _html_shell(
             f"CODEX Pattern Radar — {report.source}",
             body,
@@ -671,9 +705,9 @@ class CodexVisualizer:
 
     def full_dashboard(
         self,
-        filter_report: Optional[FilterReport]    = None,
-        tiekat_report: Optional[CodexTIEKATReport] = None,
-        comparison_report: Optional[ComparisonReport] = None,
+        filter_report: FilterReport | None = None,
+        tiekat_report: CodexTIEKATReport | None = None,
+        comparison_report: ComparisonReport | None = None,
         title: str = "CODEX Analysis Dashboard",
         source_label: str = "",
     ) -> str:
@@ -681,13 +715,14 @@ class CodexVisualizer:
         Full integrated dashboard — all available reports in one page.
         """
         tradition = (
-            filter_report.tradition if filter_report else
-            tiekat_report.tradition if tiekat_report else
-            "CODEX"
+            filter_report.tradition
+            if filter_report
+            else tiekat_report.tradition
+            if tiekat_report
+            else "CODEX"
         )
         source = source_label or (
-            filter_report.source if filter_report else
-            tiekat_report.source if tiekat_report else ""
+            filter_report.source if filter_report else tiekat_report.source if tiekat_report else ""
         )
 
         header = f"""<div class="codex-header">
@@ -698,46 +733,56 @@ class CodexVisualizer:
 </div>"""
 
         sections = [header]
-        sec_num  = 1
+        sec_num = 1
 
         if filter_report:
-            sections.append(_section(
-                f"{sec_num}.", "Coherence Heat Map",
-                _coherence_heatmap(filter_report)
-            ))
+            sections.append(
+                _section(f"{sec_num}.", "Coherence Heat Map", _coherence_heatmap(filter_report))
+            )
             sec_num += 1
 
             if filter_report.editorial_seams:
-                sections.append(_section(
-                    f"{sec_num}.", "Editorial Seams Detected",
-                    _seams_section(filter_report)
-                ))
+                sections.append(
+                    _section(
+                        f"{sec_num}.", "Editorial Seams Detected", _seams_section(filter_report)
+                    )
+                )
                 sec_num += 1
 
-            sections.append(_section(
-                f"{sec_num}.", "Signal / Filter Layer Breakdown",
-                _layer_breakdown(filter_report)
-            ))
+            sections.append(
+                _section(
+                    f"{sec_num}.",
+                    "Signal / Filter Layer Breakdown",
+                    _layer_breakdown(filter_report),
+                )
+            )
             sec_num += 1
 
         if tiekat_report:
-            sections.append(_section(
-                f"{sec_num}.", "TIEKAT Pattern Analysis",
-                _pattern_radar(tiekat_report, f"radarChart{sec_num}")
-            ))
+            sections.append(
+                _section(
+                    f"{sec_num}.",
+                    "TIEKAT Pattern Analysis",
+                    _pattern_radar(tiekat_report, f"radarChart{sec_num}"),
+                )
+            )
             sec_num += 1
 
         if comparison_report:
-            sections.append(_section(
-                f"{sec_num}.", f"Cross-Tradition Convergence: {comparison_report.tradition_a} vs {comparison_report.tradition_b}",
-                _convergence_section(comparison_report, f"convChart{sec_num}")
-            ))
+            sections.append(
+                _section(
+                    f"{sec_num}.",
+                    f"Cross-Tradition Convergence: {comparison_report.tradition_a} vs {comparison_report.tradition_b}",
+                    _convergence_section(comparison_report, f"convChart{sec_num}"),
+                )
+            )
             sec_num += 1
 
         # Disclaimer
         disclaimer_text = (
-            filter_report.disclaimer if filter_report else
-            "These findings are hypothesis seeds for further research and do not constitute doctrinal claims, historical proofs, or authoritative interpretations."
+            filter_report.disclaimer
+            if filter_report
+            else "These findings are hypothesis seeds for further research and do not constitute doctrinal claims, historical proofs, or authoritative interpretations."
         )
         sections.append(f'<div class="disclaimer">{disclaimer_text}</div>')
         sections.append(self._footer())
@@ -763,6 +808,7 @@ function toggle(id) {
 
 # ── Convenience functions ─────────────────────────────────────────────────────
 
+
 def visualize_text(
     text: str,
     tradition: str = "generic",
@@ -782,7 +828,7 @@ def visualize_text(
     f_report = f_engine.analyze(text, source=source)
     t_report = t_engine.analyze(text, source=source)
 
-    viz  = CodexVisualizer()
+    viz = CodexVisualizer()
     html = viz.full_dashboard(
         filter_report=f_report,
         tiekat_report=t_report,
@@ -804,9 +850,9 @@ def visualize_comparison(
     """
     One-shot: run full analysis + comparison on two texts and generate dashboard.
     """
-    from codex_filter import InstitutionalFilter
-    from codex_tiekat_engine import TIEKATPatternEngine
-    from codex_comparator import CodexComparator
+    from .codex_comparator import CodexComparator
+    from .codex_filter import InstitutionalFilter
+    from .codex_tiekat_engine import TIEKATPatternEngine
 
     fa = InstitutionalFilter(tradition=tradition_a)
     ta = TIEKATPatternEngine(tradition=tradition_a)
@@ -818,7 +864,7 @@ def visualize_comparison(
 
     comp_report = CodexComparator().compare(tr_a, tr_b)
 
-    viz  = CodexVisualizer()
+    viz = CodexVisualizer()
     html = viz.full_dashboard(
         filter_report=fr_a,
         tiekat_report=tr_a,
@@ -832,8 +878,10 @@ def visualize_comparison(
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 def main(argv=None):
     import argparse
+
     parser = argparse.ArgumentParser(
         prog="codex_visualizer",
         description=(
@@ -861,17 +909,21 @@ def main(argv=None):
 
     if args.command == "analyze":
         text = Path(args.input).read_text(encoding="utf-8")
-        out  = visualize_text(text, tradition=args.tradition,
-                              source=args.input, output_path=args.output)
+        out = visualize_text(
+            text, tradition=args.tradition, source=args.input, output_path=args.output
+        )
         print(f"Dashboard written to: {out}")
 
     elif args.command == "compare":
         ta = Path(args.input_a).read_text(encoding="utf-8")
         tb = Path(args.input_b).read_text(encoding="utf-8")
         out = visualize_comparison(
-            ta, tb,
-            tradition_a=args.tradition_a, tradition_b=args.tradition_b,
-            source_a=args.input_a, source_b=args.input_b,
+            ta,
+            tb,
+            tradition_a=args.tradition_a,
+            tradition_b=args.tradition_b,
+            source_a=args.input_a,
+            source_b=args.input_b,
             output_path=args.output,
         )
         print(f"Comparison dashboard written to: {out}")

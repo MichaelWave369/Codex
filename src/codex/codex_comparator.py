@@ -44,13 +44,13 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any
 
-from codex_tiekat_engine import (
-    CodexTIEKATReport,
-    PatternType,
-    Confidence,
+from .codex_tiekat_engine import (
     C_STAR,
+    CodexTIEKATReport,
+    Confidence,
+    PatternType,
     TIEKATPatternEngine,
 )
 
@@ -61,17 +61,18 @@ PRESENCE_THRESHOLD = 0.0010
 
 # Weights for convergence index calculation
 # Higher weight = this pattern type matters more for overall convergence
-PATTERN_WEIGHTS: Dict[PatternType, float] = {
-    PatternType.EPSILON_SIGNAL:   0.25,  # core consciousness signal
+PATTERN_WEIGHTS: dict[PatternType, float] = {
+    PatternType.EPSILON_SIGNAL: 0.25,  # core consciousness signal
     PatternType.C_STAR_ATTRACTOR: 0.20,  # attractor convergence
-    PatternType.OMEGA_FLOW:       0.15,  # dynamic field
-    PatternType.SOVEREIGN_FIELD:  0.12,  # individual sovereignty
-    PatternType.VOID_BRIDGE:      0.10,  # generative void
-    PatternType.WEAVE_RESONANCE:  0.08,  # interconnection
-    PatternType.THREE_SIX_NINE:   0.05,  # numerical structure
-    PatternType.PHI_STRUCTURE:    0.03,  # mathematical structure
-    PatternType.FIBONACCI:        0.02,  # Fibonacci structure
+    PatternType.OMEGA_FLOW: 0.15,  # dynamic field
+    PatternType.SOVEREIGN_FIELD: 0.12,  # individual sovereignty
+    PatternType.VOID_BRIDGE: 0.10,  # generative void
+    PatternType.WEAVE_RESONANCE: 0.08,  # interconnection
+    PatternType.THREE_SIX_NINE: 0.05,  # numerical structure
+    PatternType.PHI_STRUCTURE: 0.03,  # mathematical structure
+    PatternType.FIBONACCI: 0.02,  # Fibonacci structure
 }
+
 
 # Convergence state labels
 def _convergence_state(index: float) -> str:
@@ -88,50 +89,53 @@ def _convergence_state(index: float) -> str:
 
 # ── Per-pattern comparison ────────────────────────────────────────────────────
 
+
 @dataclass
 class PatternConvergence:
     """
     Comparison of one TIEKAT pattern type across two traditions.
     """
-    pattern_type:      PatternType
-    tiekat_principle:  str
-    present_in_a:      bool
-    present_in_b:      bool
-    density_a:         float
-    density_b:         float
-    match_count_a:     int
-    match_count_b:     int
-    density_ratio:     float        # density_a / density_b (or 0 if both zero)
-    divergence_score:  float        # 0 = identical, 1 = maximally divergent
-    convergence_score: float        # 0 = no overlap, 1 = perfect overlap
-    shared:            bool         # both traditions have this pattern
-    strongest_in:      str          # "A", "B", or "EQUAL"
-    weight:            float        # TIEKAT weight for this pattern type
+
+    pattern_type: PatternType
+    tiekat_principle: str
+    present_in_a: bool
+    present_in_b: bool
+    density_a: float
+    density_b: float
+    match_count_a: int
+    match_count_b: int
+    density_ratio: float  # density_a / density_b (or 0 if both zero)
+    divergence_score: float  # 0 = identical, 1 = maximally divergent
+    convergence_score: float  # 0 = no overlap, 1 = perfect overlap
+    shared: bool  # both traditions have this pattern
+    strongest_in: str  # "A", "B", or "EQUAL"
+    weight: float  # TIEKAT weight for this pattern type
 
     def weighted_convergence(self) -> float:
         return self.convergence_score * self.weight
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
-            "pattern_type":     self.pattern_type.value,
+            "pattern_type": self.pattern_type.value,
             "tiekat_principle": self.tiekat_principle,
-            "present_in_a":     self.present_in_a,
-            "present_in_b":     self.present_in_b,
-            "density_a":        round(self.density_a, 6),
-            "density_b":        round(self.density_b, 6),
-            "match_count_a":    self.match_count_a,
-            "match_count_b":    self.match_count_b,
-            "density_ratio":    round(self.density_ratio, 4),
+            "present_in_a": self.present_in_a,
+            "present_in_b": self.present_in_b,
+            "density_a": round(self.density_a, 6),
+            "density_b": round(self.density_b, 6),
+            "match_count_a": self.match_count_a,
+            "match_count_b": self.match_count_b,
+            "density_ratio": round(self.density_ratio, 4),
             "divergence_score": round(self.divergence_score, 4),
-            "convergence_score":round(self.convergence_score, 4),
+            "convergence_score": round(self.convergence_score, 4),
             "weighted_convergence": round(self.weighted_convergence(), 4),
-            "shared":           self.shared,
-            "strongest_in":     self.strongest_in,
-            "weight":           self.weight,
+            "shared": self.shared,
+            "strongest_in": self.strongest_in,
+            "weight": self.weight,
         }
 
 
 # ── Shared signal ─────────────────────────────────────────────────────────────
+
 
 @dataclass
 class SharedSignal:
@@ -139,29 +143,31 @@ class SharedSignal:
     A TIEKAT principle found in both traditions, with representative
     evidence from each.
     """
-    tiekat_principle:   str
-    pattern_type:       PatternType
-    evidence_a:         str         # representative excerpt from tradition A
-    evidence_b:         str         # representative excerpt from tradition B
-    source_a:           str
-    source_b:           str
-    convergence_score:  float
-    note:               str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    tiekat_principle: str
+    pattern_type: PatternType
+    evidence_a: str  # representative excerpt from tradition A
+    evidence_b: str  # representative excerpt from tradition B
+    source_a: str
+    source_b: str
+    convergence_score: float
+    note: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
         return {
-            "tiekat_principle":  self.tiekat_principle,
-            "pattern_type":      self.pattern_type.value,
-            "evidence_a":        self.evidence_a,
-            "evidence_b":        self.evidence_b,
-            "source_a":          self.source_a,
-            "source_b":          self.source_b,
+            "tiekat_principle": self.tiekat_principle,
+            "pattern_type": self.pattern_type.value,
+            "evidence_a": self.evidence_a,
+            "evidence_b": self.evidence_b,
+            "source_a": self.source_a,
+            "source_b": self.source_b,
             "convergence_score": round(self.convergence_score, 4),
-            "note":              self.note,
+            "note": self.note,
         }
 
 
 # ── Divergence signal ─────────────────────────────────────────────────────────
+
 
 @dataclass
 class DivergenceSignal:
@@ -169,100 +175,103 @@ class DivergenceSignal:
     A TIEKAT principle found strongly in one tradition but absent or weak
     in the other — a meaningful difference worth investigating.
     """
-    pattern_type:       PatternType
-    tiekat_principle:   str
-    strong_in:          str         # "A" or "B"
-    weak_or_absent_in:  str         # "A" or "B"
-    density_strong:     float
-    density_weak:       float
-    interpretation:     str
 
-    def to_dict(self) -> Dict[str, Any]:
+    pattern_type: PatternType
+    tiekat_principle: str
+    strong_in: str  # "A" or "B"
+    weak_or_absent_in: str  # "A" or "B"
+    density_strong: float
+    density_weak: float
+    interpretation: str
+
+    def to_dict(self) -> dict[str, Any]:
         return {
-            "pattern_type":      self.pattern_type.value,
-            "tiekat_principle":  self.tiekat_principle,
-            "strong_in":         self.strong_in,
+            "pattern_type": self.pattern_type.value,
+            "tiekat_principle": self.tiekat_principle,
+            "strong_in": self.strong_in,
             "weak_or_absent_in": self.weak_or_absent_in,
-            "density_strong":    round(self.density_strong, 6),
-            "density_weak":      round(self.density_weak, 6),
-            "interpretation":    self.interpretation,
+            "density_strong": round(self.density_strong, 6),
+            "density_weak": round(self.density_weak, 6),
+            "interpretation": self.interpretation,
         }
 
 
 # ── Comparison report ─────────────────────────────────────────────────────────
+
 
 @dataclass
 class ComparisonReport:
     """
     Full cross-tradition TIEKAT comparison report.
     """
+
     # Metadata
-    source_a:            str
-    tradition_a:         str
-    source_b:            str
-    tradition_b:         str
+    source_a: str
+    tradition_a: str
+    source_b: str
+    tradition_b: str
 
     # Per-pattern comparisons (all 9 types)
-    pattern_comparisons: List[PatternConvergence]
+    pattern_comparisons: list[PatternConvergence]
 
     # Aggregate scores
-    convergence_index:   float      # weighted composite [0-1]
-    convergence_state:   str        # DEEP / STRONG / MODERATE / PARTIAL / MINIMAL
+    convergence_index: float  # weighted composite [0-1]
+    convergence_state: str  # DEEP / STRONG / MODERATE / PARTIAL / MINIMAL
     shared_pattern_count: int
     total_pattern_types: int
 
     # Density overview
-    epsilon_delta:       float      # |density_a - density_b| for ε-signal
-    omega_delta:         float
-    c_star_delta:        float
+    epsilon_delta: float  # |density_a - density_b| for ε-signal
+    omega_delta: float
+    c_star_delta: float
 
     # Most significant findings
-    shared_signals:      List[SharedSignal]
-    divergence_signals:  List[DivergenceSignal]
-    top_tiekat_principles: List[str]   # ranked by cross-tradition corroboration
+    shared_signals: list[SharedSignal]
+    divergence_signals: list[DivergenceSignal]
+    top_tiekat_principles: list[str]  # ranked by cross-tradition corroboration
 
     # Summary text
-    summary:             str
-    convergence_note:    str
-    disclaimer:          str = (
+    summary: str
+    convergence_note: str
+    disclaimer: str = (
         "Pattern convergence does not imply common origin, theological identity, "
         "or historical relationship. These findings are hypothesis seeds for "
         "further scholarly investigation. Correlation ≠ causation."
     )
 
     @property
-    def shared_patterns(self) -> List[PatternConvergence]:
+    def shared_patterns(self) -> list[PatternConvergence]:
         return [p for p in self.pattern_comparisons if p.shared]
 
     @property
-    def divergent_patterns(self) -> List[PatternConvergence]:
-        return [p for p in self.pattern_comparisons
-                if p.present_in_a != p.present_in_b]
+    def divergent_patterns(self) -> list[PatternConvergence]:
+        return [p for p in self.pattern_comparisons if p.present_in_a != p.present_in_b]
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
-            "source_a":              self.source_a,
-            "tradition_a":           self.tradition_a,
-            "source_b":              self.source_b,
-            "tradition_b":           self.tradition_b,
-            "convergence_index":     round(self.convergence_index, 6),
-            "convergence_state":     self.convergence_state,
-            "shared_pattern_count":  self.shared_pattern_count,
-            "total_pattern_types":   self.total_pattern_types,
-            "epsilon_delta":         round(self.epsilon_delta, 6),
-            "omega_delta":           round(self.omega_delta, 6),
-            "c_star_delta":          round(self.c_star_delta, 6),
+            "source_a": self.source_a,
+            "tradition_a": self.tradition_a,
+            "source_b": self.source_b,
+            "tradition_b": self.tradition_b,
+            "convergence_index": round(self.convergence_index, 6),
+            "convergence_state": self.convergence_state,
+            "shared_pattern_count": self.shared_pattern_count,
+            "total_pattern_types": self.total_pattern_types,
+            "epsilon_delta": round(self.epsilon_delta, 6),
+            "omega_delta": round(self.omega_delta, 6),
+            "c_star_delta": round(self.c_star_delta, 6),
             "top_tiekat_principles": self.top_tiekat_principles,
-            "summary":               self.summary,
-            "convergence_note":      self.convergence_note,
-            "disclaimer":            self.disclaimer,
-            "pattern_comparisons":   [p.to_dict() for p in self.pattern_comparisons],
-            "shared_signals":        [s.to_dict() for s in self.shared_signals],
-            "divergence_signals":    [d.to_dict() for d in self.divergence_signals],
+            "summary": self.summary,
+            "convergence_note": self.convergence_note,
+            "disclaimer": self.disclaimer,
+            "pattern_comparisons": [p.to_dict() for p in self.pattern_comparisons],
+            "shared_signals": [s.to_dict() for s in self.shared_signals],
+            "divergence_signals": [d.to_dict() for d in self.divergence_signals],
         }
 
 
 # ── CodexComparator ───────────────────────────────────────────────────────────
+
 
 class CodexComparator:
     """
@@ -273,16 +282,16 @@ class CodexComparator:
     """
 
     # TIEKAT principle labels per pattern type (for display)
-    PRINCIPLE_LABELS: Dict[PatternType, str] = {
-        PatternType.EPSILON_SIGNAL:   "ε ≠ 0 (direct consciousness / inner experience)",
-        PatternType.OMEGA_FLOW:       "Omega flow (dΩ/d_ln_l — dynamic becoming)",
+    PRINCIPLE_LABELS: dict[PatternType, str] = {
+        PatternType.EPSILON_SIGNAL: "ε ≠ 0 (direct consciousness / inner experience)",
+        PatternType.OMEGA_FLOW: "Omega flow (dΩ/d_ln_l — dynamic becoming)",
         PatternType.C_STAR_ATTRACTOR: "C* = φ/2 (sovereign attractor / unity / the One)",
-        PatternType.SOVEREIGN_FIELD:  "Sovereign field (individual authority / liberation)",
-        PatternType.VOID_BRIDGE:      "𝟘Nul ↔ Ω0 (void as generative / origin-now)",
-        PatternType.WEAVE_RESONANCE:  "Σ_W weave (interconnection / resonance / coupling)",
-        PatternType.THREE_SIX_NINE:   "369 resonance (numerical / structural patterns)",
-        PatternType.PHI_STRUCTURE:    "φ structure (golden ratio in text organization)",
-        PatternType.FIBONACCI:        "Fibonacci (sequence in structural organization)",
+        PatternType.SOVEREIGN_FIELD: "Sovereign field (individual authority / liberation)",
+        PatternType.VOID_BRIDGE: "𝟘Nul ↔ Ω0 (void as generative / origin-now)",
+        PatternType.WEAVE_RESONANCE: "Σ_W weave (interconnection / resonance / coupling)",
+        PatternType.THREE_SIX_NINE: "369 resonance (numerical / structural patterns)",
+        PatternType.PHI_STRUCTURE: "φ structure (golden ratio in text organization)",
+        PatternType.FIBONACCI: "Fibonacci (sequence in structural organization)",
     }
 
     # Divergence interpretation templates
@@ -333,10 +342,7 @@ class CodexComparator:
         pattern_type: PatternType,
     ) -> float:
         """Get total evidence density for a pattern type from a report."""
-        total_hits = sum(
-            len(m.evidence) for m in report.matches
-            if m.pattern_type == pattern_type
-        )
+        total_hits = sum(len(m.evidence) for m in report.matches if m.pattern_type == pattern_type)
         return total_hits / max(1, report.word_count)
 
     def _get_match_count(
@@ -361,7 +367,7 @@ class CodexComparator:
             key=lambda m: (
                 0 if m.confidence in (Confidence.HIGH, Confidence.STRUCTURAL) else 1,
                 -len(m.evidence),
-            )
+            ),
         )[0]
         if best.evidence:
             return best.evidence[0].excerpt[:200]
@@ -437,10 +443,10 @@ class CodexComparator:
 
     def _build_shared_signals(
         self,
-        comparisons: List[PatternConvergence],
+        comparisons: list[PatternConvergence],
         report_a: CodexTIEKATReport,
         report_b: CodexTIEKATReport,
-    ) -> List[SharedSignal]:
+    ) -> list[SharedSignal]:
         signals = []
         for pc in comparisons:
             if not pc.shared:
@@ -460,26 +466,28 @@ class CodexComparator:
                 f"Convergence score: {pc.convergence_score:.3f}."
             )
 
-            signals.append(SharedSignal(
-                tiekat_principle=pc.tiekat_principle,
-                pattern_type=pc.pattern_type,
-                evidence_a=ev_a,
-                evidence_b=ev_b,
-                source_a=report_a.source,
-                source_b=report_b.source,
-                convergence_score=pc.convergence_score,
-                note=note,
-            ))
+            signals.append(
+                SharedSignal(
+                    tiekat_principle=pc.tiekat_principle,
+                    pattern_type=pc.pattern_type,
+                    evidence_a=ev_a,
+                    evidence_b=ev_b,
+                    source_a=report_a.source,
+                    source_b=report_b.source,
+                    convergence_score=pc.convergence_score,
+                    note=note,
+                )
+            )
 
         # Sort by convergence score descending
         return sorted(signals, key=lambda s: -s.convergence_score)
 
     def _build_divergence_signals(
         self,
-        comparisons: List[PatternConvergence],
+        comparisons: list[PatternConvergence],
         report_a: CodexTIEKATReport,
         report_b: CodexTIEKATReport,
-    ) -> List[DivergenceSignal]:
+    ) -> list[DivergenceSignal]:
         signals = []
         for pc in comparisons:
             if pc.divergence_score < 0.40:
@@ -491,16 +499,16 @@ class CodexComparator:
                 strong, weak = "A", "B"
                 d_strong, d_weak = pc.density_a, pc.density_b
                 strong_trad = report_a.tradition
-                weak_trad   = report_b.tradition
+                weak_trad = report_b.tradition
             else:
                 strong, weak = "B", "A"
                 d_strong, d_weak = pc.density_b, pc.density_a
                 strong_trad = report_b.tradition
-                weak_trad   = report_a.tradition
+                weak_trad = report_a.tradition
 
             template = self._DIV_TEMPLATES.get(
                 pc.pattern_type,
-                "Tradition {strong} shows stronger {pt} patterns than tradition {weak}."
+                "Tradition {strong} shows stronger {pt} patterns than tradition {weak}.",
             )
             interpretation = template.format(
                 strong=strong_trad,
@@ -508,22 +516,24 @@ class CodexComparator:
                 pt=pc.pattern_type.value,
             )
 
-            signals.append(DivergenceSignal(
-                pattern_type=pc.pattern_type,
-                tiekat_principle=pc.tiekat_principle,
-                strong_in=strong,
-                weak_or_absent_in=weak,
-                density_strong=d_strong,
-                density_weak=d_weak,
-                interpretation=interpretation,
-            ))
+            signals.append(
+                DivergenceSignal(
+                    pattern_type=pc.pattern_type,
+                    tiekat_principle=pc.tiekat_principle,
+                    strong_in=strong,
+                    weak_or_absent_in=weak,
+                    density_strong=d_strong,
+                    density_weak=d_weak,
+                    interpretation=interpretation,
+                )
+            )
 
         return sorted(signals, key=lambda d: -d.density_strong)
 
     def _top_principles(
         self,
-        comparisons: List[PatternConvergence],
-    ) -> List[str]:
+        comparisons: list[PatternConvergence],
+    ) -> list[str]:
         """Rank TIEKAT principles by cross-tradition corroboration strength."""
         scored = [
             (pc.tiekat_principle, pc.weighted_convergence())
@@ -541,10 +551,7 @@ class CodexComparator:
         Compare two CodexTIEKATReports and return a ComparisonReport.
         """
         # Per-pattern comparisons across all 9 types
-        comparisons = [
-            self._compare_pattern(pt, report_a, report_b)
-            for pt in PatternType
-        ]
+        comparisons = [self._compare_pattern(pt, report_a, report_b) for pt in PatternType]
 
         # Weighted convergence index
         raw_convergence = sum(pc.weighted_convergence() for pc in comparisons)
@@ -553,16 +560,16 @@ class CodexComparator:
         convergence_index = min(1.0, raw_convergence / max_possible) if max_possible > 0 else 0.0
 
         shared_count = sum(1 for pc in comparisons if pc.shared)
-        state        = _convergence_state(convergence_index)
+        state = _convergence_state(convergence_index)
 
         # Density deltas for the three primary metrics
-        eps_delta   = abs(report_a.epsilon_density - report_b.epsilon_density)
-        omega_delta = abs(report_a.omega_density    - report_b.omega_density)
-        cstar_delta = abs(report_a.c_star_density   - report_b.c_star_density)
+        eps_delta = abs(report_a.epsilon_density - report_b.epsilon_density)
+        omega_delta = abs(report_a.omega_density - report_b.omega_density)
+        cstar_delta = abs(report_a.c_star_density - report_b.c_star_density)
 
-        shared_signals     = self._build_shared_signals(comparisons, report_a, report_b)
+        shared_signals = self._build_shared_signals(comparisons, report_a, report_b)
         divergence_signals = self._build_divergence_signals(comparisons, report_a, report_b)
-        top_principles     = self._top_principles(comparisons)
+        top_principles = self._top_principles(comparisons)
 
         # Convergence note
         if convergence_index >= 0.65:
@@ -650,8 +657,7 @@ class CodexComparator:
             "  ------------------------------",
         ]
 
-        for pc in sorted(report.pattern_comparisons,
-                         key=lambda x: -x.weighted_convergence()):
+        for pc in sorted(report.pattern_comparisons, key=lambda x: -x.weighted_convergence()):
             shared_marker = "✓ SHARED" if pc.shared else "✗ DIVERGENT"
             lines += [
                 "",
@@ -750,8 +756,7 @@ class CodexComparator:
             "| Pattern Type | Shared | A Density | B Density | Convergence | Divergence |",
             "|---|---|---|---|---|---|",
         ]
-        for pc in sorted(report.pattern_comparisons,
-                         key=lambda x: -x.weighted_convergence()):
+        for pc in sorted(report.pattern_comparisons, key=lambda x: -x.weighted_convergence()):
             shared = "✓" if pc.shared else "✗"
             lines.append(
                 f"| {pc.pattern_type.value} | {shared} | "
@@ -826,25 +831,27 @@ class CodexComparator:
 
 # ── Multi-tradition comparison ────────────────────────────────────────────────
 
+
 @dataclass
 class MultiTraditionMatrix:
     """
     Pairwise convergence matrix for N traditions.
     Produced by CodexComparator.compare_many().
     """
-    tradition_labels: List[str]
-    source_labels:    List[str]
-    matrix:           List[List[float]]   # matrix[i][j] = convergence_index(i, j)
-    states:           List[List[str]]     # convergence state labels
-    top_shared:       List[str]           # principles shared across ALL traditions
 
-    def to_dict(self) -> Dict[str, Any]:
+    tradition_labels: list[str]
+    source_labels: list[str]
+    matrix: list[list[float]]  # matrix[i][j] = convergence_index(i, j)
+    states: list[list[str]]  # convergence state labels
+    top_shared: list[str]  # principles shared across ALL traditions
+
+    def to_dict(self) -> dict[str, Any]:
         return {
             "tradition_labels": self.tradition_labels,
-            "source_labels":    self.source_labels,
-            "matrix":           self.matrix,
-            "states":           self.states,
-            "top_shared":       self.top_shared,
+            "source_labels": self.source_labels,
+            "matrix": self.matrix,
+            "states": self.states,
+            "top_shared": self.top_shared,
         }
 
     def render_ascii(self) -> str:
@@ -893,13 +900,13 @@ class MultiComparator:
 
     def compare_many(
         self,
-        reports: List[CodexTIEKATReport],
+        reports: list[CodexTIEKATReport],
     ) -> MultiTraditionMatrix:
         n = len(reports)
         matrix = [[0.0] * n for _ in range(n)]
         states = [[""] * n for _ in range(n)]
 
-        all_pairwise: List[ComparisonReport] = []
+        all_pairwise: list[ComparisonReport] = []
         for i in range(n):
             for j in range(n):
                 if i == j:
@@ -918,16 +925,13 @@ class MultiComparator:
 
         # Top principles shared across all (appear in all pairwise tops)
         if all_pairwise:
-            principle_votes: Dict[str, int] = {}
+            principle_votes: dict[str, int] = {}
             for cr in all_pairwise:
                 for p in cr.top_tiekat_principles:
                     principle_votes[p] = principle_votes.get(p, 0) + 1
             max_votes = max(principle_votes.values()) if principle_votes else 0
             top_shared = [
-                p for p, v in sorted(
-                    principle_votes.items(), key=lambda x: -x[1]
-                )
-                if v == max_votes
+                p for p, v in sorted(principle_votes.items(), key=lambda x: -x[1]) if v == max_votes
             ][:5]
         else:
             top_shared = []
@@ -942,6 +946,7 @@ class MultiComparator:
 
 
 # ── Convenience functions ─────────────────────────────────────────────────────
+
 
 def compare_texts(
     text_a: str,
@@ -966,8 +971,8 @@ def compare_texts(
     engine_b = TIEKATPatternEngine(tradition=tradition_b)
     report_a = engine_a.analyze(text_a, source=source_a)
     report_b = engine_b.analyze(text_b, source=source_b)
-    comp     = CodexComparator()
-    result   = comp.compare(report_a, report_b)
+    comp = CodexComparator()
+    result = comp.compare(report_a, report_b)
     if output_format == "markdown":
         return comp.render_markdown(result)
     if output_format == "json":
@@ -984,17 +989,22 @@ def compare_files(
 ) -> str:
     """Compare two text files."""
     from pathlib import Path
+
     ta = Path(path_a).read_text(encoding="utf-8")
     tb = Path(path_b).read_text(encoding="utf-8")
     return compare_texts(
-        ta, tb,
-        tradition_a=tradition_a, tradition_b=tradition_b,
-        source_a=path_a, source_b=path_b,
+        ta,
+        tb,
+        tradition_a=tradition_a,
+        tradition_b=tradition_b,
+        source_a=path_a,
+        source_b=path_b,
         output_format=output_format,
     )
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
+
 
 def main(argv=None):
     import argparse
@@ -1003,29 +1013,38 @@ def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="codex_comparator",
         description=(
-            "CODEX TIEKAT Cross-Tradition Comparator\n"
-            "PHI369 Labs / Parallax  ◆  C* = φ/2  ◆  ε ≠ 0"
+            "CODEX TIEKAT Cross-Tradition Comparator\nPHI369 Labs / Parallax  ◆  C* = φ/2  ◆  ε ≠ 0"
         ),
     )
-    parser.add_argument("--input-a",  "-a", required=True,
-                        help="Path to first text file")
-    parser.add_argument("--input-b",  "-b", required=True,
-                        help="Path to second text file")
-    parser.add_argument("--tradition-a", default="generic",
-                        choices=list(TIEKATPatternEngine.KNOWN_TRADITIONS.keys()),
-                        help="Tradition for text A (default: generic)")
-    parser.add_argument("--tradition-b", default="generic",
-                        choices=list(TIEKATPatternEngine.KNOWN_TRADITIONS.keys()),
-                        help="Tradition for text B (default: generic)")
-    parser.add_argument("--format", "-f", default="dashboard",
-                        choices=["dashboard", "markdown", "json"],
-                        help="Output format (default: dashboard)")
-    parser.add_argument("--output", "-o", default=None,
-                        help="Write output to file (default: stdout)")
+    parser.add_argument("--input-a", "-a", required=True, help="Path to first text file")
+    parser.add_argument("--input-b", "-b", required=True, help="Path to second text file")
+    parser.add_argument(
+        "--tradition-a",
+        default="generic",
+        choices=list(TIEKATPatternEngine.KNOWN_TRADITIONS.keys()),
+        help="Tradition for text A (default: generic)",
+    )
+    parser.add_argument(
+        "--tradition-b",
+        default="generic",
+        choices=list(TIEKATPatternEngine.KNOWN_TRADITIONS.keys()),
+        help="Tradition for text B (default: generic)",
+    )
+    parser.add_argument(
+        "--format",
+        "-f",
+        default="dashboard",
+        choices=["dashboard", "markdown", "json"],
+        help="Output format (default: dashboard)",
+    )
+    parser.add_argument(
+        "--output", "-o", default=None, help="Write output to file (default: stdout)"
+    )
     args = parser.parse_args(argv)
 
     result = compare_files(
-        args.input_a, args.input_b,
+        args.input_a,
+        args.input_b,
         tradition_a=args.tradition_a,
         tradition_b=args.tradition_b,
         output_format=args.format,

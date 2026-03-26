@@ -97,3 +97,59 @@ The CI workflow runs:
 ## Ethical framing
 
 Please read [docs/ETHICS.md](docs/ETHICS.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before extending this project.
+
+## CODEX Operator Studio (Streamlit, v2.1)
+
+CODEX Operator Studio is a local-first operator interface for running existing CODEX engines
+without replacing CLI workflows.
+
+### Modes
+
+- **Analyze**: run TIEKAT + Institutional Filter on one text.
+- **Compare**: run cross-tradition comparison on two texts.
+- **Workspace**: browse and curate saved local analysis bundles.
+
+### v2.1 workspace intelligence
+
+- Local workspace storage in **`.codex_workspace/`** (auto-created when needed).
+- **Save current session to workspace** from the Workspace mode toolbar.
+- **Recent Sessions** panel (top 3–5 latest bundles) with one-click **Resume**.
+- **Quick Resume Last Session** action in Workspace toolbar.
+- **Favorites/Starred bundles** with persistent `metadata.favorite` state.
+- **Bundle browser** with metadata, mode/tag/operator/text filters, favorites-only toggle, and
+  load/favorite/delete actions.
+- **Sorting options**: newest, oldest, most pins, most notes, alphabetical.
+- **Findings index** aggregated across workspace bundles from pinned findings.
+- **Notes index** aggregated across workspace bundles with searchable previews.
+- **Bundle comparison** panel for side-by-side metadata/signal inspection.
+- **Lightweight metadata editing** (project/operator/tags/description) with save-back to loaded
+  bundle.
+- Bundle export/import remains local-first (no remote persistence layer).
+
+### Existing analysis features
+
+- Structured tabs for overview, patterns/filter/seams/shared/divergence, and raw JSON.
+- Passage inspector, pattern filters, coherence charts, distribution chart, and Pattern ↔ Passage linking.
+- Side-by-side comparison evidence and Delta Lens for convergence/divergence focus.
+- Deterministic Analyze/Compare summaries, analyst notes, pinned findings, and Workbench Markdown export.
+- Export actions for JSON, Markdown, dashboard text, and HTML.
+
+### Install UI dependency
+
+```bash
+pip install -e .[dev,ui]
+```
+
+### Run
+
+```bash
+streamlit run codex_operator/app.py
+```
+
+### Quick usage
+
+1. Choose **Analyze**, **Compare**, or **Workspace** mode.
+2. Paste text (or upload `.txt` / `.md`) for Analyze/Compare.
+3. Select tradition(s) and source label(s), then run analysis.
+4. Save sessions into Workspace for local bundle library management.
+5. Use Workspace browser/indexes/comparison to revisit findings and notes.
