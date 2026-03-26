@@ -56,29 +56,28 @@ import json
 import sys
 import textwrap
 from pathlib import Path
-from typing import Optional
 
 # ── Module imports ─────────────────────────────────────────────────────────────
-from codex_comparator import (
+from .codex_comparator import (
     CodexComparator,
     MultiComparator,
 )
-from codex_filter import (
+from .codex_filter import (
     InstitutionalFilter,
     LayerType,
 )
-from codex_tiekat_engine import (
+from .codex_tiekat_engine import (
     PatternType,
     TIEKATPatternEngine,
 )
-from codex_visualizer import (
+from .codex_visualizer import (
     CodexVisualizer,
 )
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-VERSION    = "1.0.0"
+VERSION = "1.0.0"
 TIEKAT_VER = "v64.0.0"
-SEED       = "369_369"
+SEED = "369_369"
 
 TRADITIONS = TIEKATPatternEngine.KNOWN_TRADITIONS
 
@@ -282,7 +281,11 @@ LAYER_EXPLANATIONS = {
     "SOVEREIGN_VOICE": {
         "name": "Sovereign Voice (▲)",
         "description": "First-person teaching authority from inner knowing — no institutional intermediary.",
-        "examples": ["'Seek and you shall find'", "'I tell you truly'", "Open invitation to all seekers"],
+        "examples": [
+            "'Seek and you shall find'",
+            "'I tell you truly'",
+            "Open invitation to all seekers",
+        ],
     },
     "AUTHORITY_CLAIM": {
         "name": "Authority Claim (▼)",
@@ -302,24 +305,37 @@ LAYER_EXPLANATIONS = {
     "DOCTRINAL_FORMULA": {
         "name": "Doctrinal Formula (▼)",
         "description": "Creedal belief assertions — propositional faith commanded externally.",
-        "examples": ["Council decrees", "Required belief statements", "Ritual requirements for salvation"],
+        "examples": [
+            "Council decrees",
+            "Required belief statements",
+            "Ritual requirements for salvation",
+        ],
     },
     "TEMPORAL_POWER": {
         "name": "Temporal Power (▼)",
         "description": "Political/imperial authority in spiritual text context.",
-        "examples": ["Caesar/emperor compliance", "Divine right of rulers", "Political allegiance framing"],
+        "examples": [
+            "Caesar/emperor compliance",
+            "Divine right of rulers",
+            "Political allegiance framing",
+        ],
     },
     "GENDER_ERASURE": {
         "name": "Gender Erasure (▼)",
         "description": "Systematic removal or suppression of feminine presence in transmission.",
-        "examples": ["Female silence commands", "Masculine-only spirit language", "Female authority prohibition"],
+        "examples": [
+            "Female silence commands",
+            "Masculine-only spirit language",
+            "Female authority prohibition",
+        ],
     },
 }
 
 
 # ── Output helpers ─────────────────────────────────────────────────────────────
 
-def _write_output(content: str, output_path: Optional[str], fmt: str) -> None:
+
+def _write_output(content: str, output_path: str | None, fmt: str) -> None:
     if output_path:
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         Path(output_path).write_text(content, encoding="utf-8")
@@ -344,10 +360,11 @@ def _source_label(path: str) -> str:
 
 # ── Command: analyze ──────────────────────────────────────────────────────────
 
+
 def cmd_analyze(args: argparse.Namespace) -> int:
-    text   = _read_text(args.input)
+    text = _read_text(args.input)
     source = args.source or _source_label(args.input)
-    fmt    = args.format
+    fmt = args.format
 
     f_engine = InstitutionalFilter(tradition=args.tradition)
     t_engine = TIEKATPatternEngine(tradition=args.tradition)
@@ -357,8 +374,8 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
     if fmt == "html":
         output = args.output or f"codex_{Path(args.input).stem}_dashboard.html"
-        viz    = CodexVisualizer()
-        html   = viz.full_dashboard(
+        viz = CodexVisualizer()
+        html = viz.full_dashboard(
             filter_report=f_report,
             tiekat_report=t_report,
             title=f"CODEX — {source}",
@@ -369,22 +386,21 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
     elif fmt == "json":
         combined = {
-            "source":         source,
-            "tradition":      args.tradition,
-            "filter_report":  f_report.to_dict(),
-            "tiekat_report":  t_report.to_dict(),
+            "source": source,
+            "tradition": args.tradition,
+            "filter_report": f_report.to_dict(),
+            "tiekat_report": t_report.to_dict(),
         }
-        _write_output(json.dumps(combined, indent=2, ensure_ascii=False),
-                      args.output, fmt)
+        _write_output(json.dumps(combined, indent=2, ensure_ascii=False), args.output, fmt)
 
     elif fmt == "text":
-        out  = f_engine.render_dashboard(f_report)
+        out = f_engine.render_dashboard(f_report)
         out += "\n\n"
         out += t_engine.render_dashboard(t_report)
         _write_output(out, args.output, fmt)
 
     else:  # dashboard (default)
-        out  = f_engine.render_dashboard(f_report)
+        out = f_engine.render_dashboard(f_report)
         out += "\n\n"
         out += t_engine.render_dashboard(t_report)
         _write_output(out, args.output, fmt)
@@ -394,12 +410,13 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
 # ── Command: compare ──────────────────────────────────────────────────────────
 
+
 def cmd_compare(args: argparse.Namespace) -> int:
-    text_a  = _read_text(args.input_a)
-    text_b  = _read_text(args.input_b)
+    text_a = _read_text(args.input_a)
+    text_b = _read_text(args.input_b)
     source_a = args.source_a or _source_label(args.input_a)
     source_b = args.source_b or _source_label(args.input_b)
-    fmt      = args.format
+    fmt = args.format
 
     fa = InstitutionalFilter(tradition=args.tradition_a)
     fb = InstitutionalFilter(tradition=args.tradition_b)
@@ -417,7 +434,7 @@ def cmd_compare(args: argparse.Namespace) -> int:
         output = args.output or (
             f"codex_{Path(args.input_a).stem}_vs_{Path(args.input_b).stem}.html"
         )
-        viz  = CodexVisualizer()
+        viz = CodexVisualizer()
         html = viz.full_dashboard(
             filter_report=fr_a,
             tiekat_report=tr_a,
@@ -430,16 +447,15 @@ def cmd_compare(args: argparse.Namespace) -> int:
 
     elif fmt == "json":
         combined = {
-            "source_a":       source_a,
-            "source_b":       source_b,
-            "filter_a":       fr_a.to_dict(),
-            "filter_b":       fr_b.to_dict(),
-            "tiekat_a":       tr_a.to_dict(),
-            "tiekat_b":       tr_b.to_dict(),
-            "comparison":     comp.to_dict(),
+            "source_a": source_a,
+            "source_b": source_b,
+            "filter_a": fr_a.to_dict(),
+            "filter_b": fr_b.to_dict(),
+            "tiekat_a": tr_a.to_dict(),
+            "tiekat_b": tr_b.to_dict(),
+            "comparison": comp.to_dict(),
         }
-        _write_output(json.dumps(combined, indent=2, ensure_ascii=False),
-                      args.output, fmt)
+        _write_output(json.dumps(combined, indent=2, ensure_ascii=False), args.output, fmt)
 
     elif fmt == "markdown":
         comp_engine = CodexComparator()
@@ -456,17 +472,18 @@ def cmd_compare(args: argparse.Namespace) -> int:
 
 # ── Command: filter ───────────────────────────────────────────────────────────
 
+
 def cmd_filter(args: argparse.Namespace) -> int:
-    text   = _read_text(args.input)
+    text = _read_text(args.input)
     source = args.source or _source_label(args.input)
     engine = InstitutionalFilter(tradition=args.tradition)
     report = engine.analyze(text, source=source)
-    fmt    = args.format
+    fmt = args.format
 
     if fmt == "html":
         output = args.output or f"codex_{Path(args.input).stem}_filter.html"
-        viz    = CodexVisualizer()
-        html   = viz.coherence_map_html(report)
+        viz = CodexVisualizer()
+        html = viz.coherence_map_html(report)
         Path(output).write_text(html, encoding="utf-8")
         print(f"Dashboard: {output}")
     elif fmt == "json":
@@ -481,17 +498,18 @@ def cmd_filter(args: argparse.Namespace) -> int:
 
 # ── Command: patterns ─────────────────────────────────────────────────────────
 
+
 def cmd_patterns(args: argparse.Namespace) -> int:
-    text   = _read_text(args.input)
+    text = _read_text(args.input)
     source = args.source or _source_label(args.input)
     engine = TIEKATPatternEngine(tradition=args.tradition)
     report = engine.analyze(text, source=source)
-    fmt    = args.format
+    fmt = args.format
 
     if fmt == "html":
         output = args.output or f"codex_{Path(args.input).stem}_patterns.html"
-        viz    = CodexVisualizer()
-        html   = viz.pattern_radar_html(report)
+        viz = CodexVisualizer()
+        html = viz.pattern_radar_html(report)
         Path(output).write_text(html, encoding="utf-8")
         print(f"Dashboard: {output}")
     elif fmt == "json":
@@ -506,8 +524,9 @@ def cmd_patterns(args: argparse.Namespace) -> int:
 
 # ── Command: seams ────────────────────────────────────────────────────────────
 
+
 def cmd_seams(args: argparse.Namespace) -> int:
-    text   = _read_text(args.input)
+    text = _read_text(args.input)
     source = args.source or _source_label(args.input)
     engine = InstitutionalFilter(tradition=args.tradition)
     report = engine.analyze(text, source=source)
@@ -517,10 +536,7 @@ def cmd_seams(args: argparse.Namespace) -> int:
         return 0
 
     if args.format == "json":
-        out = json.dumps(
-            {"seams": [s.to_dict() for s in report.editorial_seams]},
-            indent=2
-        )
+        out = json.dumps({"seams": [s.to_dict() for s in report.editorial_seams]}, indent=2)
     else:
         lines = [
             "",
@@ -549,8 +565,9 @@ def cmd_seams(args: argparse.Namespace) -> int:
 
 # ── Command: pipeline ─────────────────────────────────────────────────────────
 
+
 def cmd_pipeline(args: argparse.Namespace) -> int:
-    inputs     = args.inputs
+    inputs = args.inputs
     traditions = args.traditions
 
     if len(traditions) == 1:
@@ -559,12 +576,12 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
         print(
             f"Error: --traditions must be 1 (applied to all) or "
             f"match --inputs count ({len(inputs)})",
-            file=sys.stderr
+            file=sys.stderr,
         )
         return 1
 
     output_dir = _ensure_output_dir(args.output_dir)
-    fmt        = args.format
+    fmt = args.format
 
     print(f"\n  CODEX Pipeline — {len(inputs)} text(s)", file=sys.stderr)
     print(f"  Output dir: {output_dir}\n", file=sys.stderr)
@@ -575,7 +592,7 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
 
     for path, tradition in zip(inputs, traditions):
         source = _source_label(path)
-        text   = _read_text(path)
+        text = _read_text(path)
         print(f"  Analyzing: {source} [{tradition}]", file=sys.stderr)
 
         fe = InstitutionalFilter(tradition=tradition)
@@ -588,7 +605,7 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
 
         # Individual dashboard
         if fmt == "html":
-            viz  = CodexVisualizer()
+            viz = CodexVisualizer()
             html = viz.full_dashboard(
                 filter_report=fr,
                 tiekat_report=tr,
@@ -603,7 +620,8 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
         elif fmt == "json":
             stem = Path(path).stem
             combined = {
-                "source": source, "tradition": tradition,
+                "source": source,
+                "tradition": tradition,
                 "filter_report": fr.to_dict(),
                 "tiekat_report": tr.to_dict(),
             }
@@ -620,7 +638,7 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
 
         if fmt == "html" and len(tiekat_reports) == 2:
             comp = CodexComparator().compare(tiekat_reports[0], tiekat_reports[1])
-            viz  = CodexVisualizer()
+            viz = CodexVisualizer()
             html = viz.full_dashboard(
                 filter_report=filter_reports[0],
                 tiekat_report=tiekat_reports[0],
@@ -633,18 +651,15 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
 
         # Matrix JSON
         matrix_path = output_dir / "convergence_matrix.json"
-        matrix_path.write_text(
-            json.dumps(matrix.to_dict(), indent=2),
-            encoding="utf-8"
-        )
+        matrix_path.write_text(json.dumps(matrix.to_dict(), indent=2), encoding="utf-8")
         print(f"  Matrix → {matrix_path}", file=sys.stderr)
 
-    print(f"\n  Pipeline complete. {len(inputs)} text(s) processed.\n",
-          file=sys.stderr)
+    print(f"\n  Pipeline complete. {len(inputs)} text(s) processed.\n", file=sys.stderr)
     return 0
 
 
 # ── Command: explain ──────────────────────────────────────────────────────────
+
 
 def cmd_explain(args: argparse.Namespace) -> int:
     if args.pattern:
@@ -780,6 +795,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
 
 # ── Command: list ─────────────────────────────────────────────────────────────
 
+
 def cmd_list(args: argparse.Namespace) -> int:
     if getattr(args, "traditions", False) or not getattr(args, "patterns", False):
         lines = [
@@ -837,6 +853,7 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 # ── Parser builder ─────────────────────────────────────────────────────────────
 
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="codex",
@@ -851,25 +868,37 @@ def build_parser() -> argparse.ArgumentParser:
   Version: {VERSION}  ◆  Seed: {SEED}
         """).strip(),
     )
-    parser.add_argument("--version", action="version",
-                        version=f"CODEX {VERSION} / TIEKAT {TIEKAT_VER}")
+    parser.add_argument(
+        "--version", action="version", version=f"CODEX {VERSION} / TIEKAT {TIEKAT_VER}"
+    )
 
     sub = parser.add_subparsers(dest="command", required=True)
 
     # Shared arguments helper
     def add_shared(p: argparse.ArgumentParser, has_output: bool = True) -> None:
         if has_output:
-            p.add_argument("--output", "-o", default=None,
-                           help="Output file path (default: stdout for text/json, auto for html)")
-        p.add_argument("--format", "-f",
-                       choices=["dashboard", "text", "json", "markdown", "html"],
-                       default="dashboard",
-                       help="Output format (default: dashboard)")
+            p.add_argument(
+                "--output",
+                "-o",
+                default=None,
+                help="Output file path (default: stdout for text/json, auto for html)",
+            )
+        p.add_argument(
+            "--format",
+            "-f",
+            choices=["dashboard", "text", "json", "markdown", "html"],
+            default="dashboard",
+            help="Output format (default: dashboard)",
+        )
 
     def add_tradition(p: argparse.ArgumentParser, flag: str = "--tradition") -> None:
-        p.add_argument(flag, "-t", default="generic",
-                       choices=list(TRADITIONS.keys()),
-                       help="Text tradition (default: generic)")
+        p.add_argument(
+            flag,
+            "-t",
+            default="generic",
+            choices=list(TRADITIONS.keys()),
+            help="Text tradition (default: generic)",
+        )
 
     # ── analyze ──────────────────────────────────────────────────────────────
     p_analyze = sub.add_parser(
@@ -877,10 +906,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run full analysis (filter + patterns + viz) on one text",
         description="Run all CODEX modules on a single text.",
     )
-    p_analyze.add_argument("--input", "-i", required=True,
-                           help="Path to text file")
-    p_analyze.add_argument("--source", default=None,
-                           help="Human-readable source label (default: filename)")
+    p_analyze.add_argument("--input", "-i", required=True, help="Path to text file")
+    p_analyze.add_argument(
+        "--source", default=None, help="Human-readable source label (default: filename)"
+    )
     add_tradition(p_analyze)
     add_shared(p_analyze)
     p_analyze.set_defaults(func=cmd_analyze)
@@ -893,10 +922,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_compare.add_argument("--input-a", "-a", required=True)
     p_compare.add_argument("--input-b", "-b", required=True)
-    p_compare.add_argument("--tradition-a", default="generic",
-                           choices=list(TRADITIONS.keys()))
-    p_compare.add_argument("--tradition-b", default="generic",
-                           choices=list(TRADITIONS.keys()))
+    p_compare.add_argument("--tradition-a", default="generic", choices=list(TRADITIONS.keys()))
+    p_compare.add_argument("--tradition-b", default="generic", choices=list(TRADITIONS.keys()))
     p_compare.add_argument("--source-a", default=None)
     p_compare.add_argument("--source-b", default=None)
     add_shared(p_compare)
@@ -950,17 +977,27 @@ def build_parser() -> argparse.ArgumentParser:
             "  - All outputs written to --output-dir"
         ),
     )
-    p_pipeline.add_argument("--inputs", "-i", nargs="+", required=True,
-                            help="Paths to text files")
-    p_pipeline.add_argument("--traditions", "-t", nargs="+",
-                            default=["generic"],
-                            help="Tradition per input (1 or match input count)")
-    p_pipeline.add_argument("--output-dir", "-o", default="codex_reports",
-                            help="Output directory (default: codex_reports/)")
-    p_pipeline.add_argument("--format", "-f",
-                            choices=["html", "json", "text"],
-                            default="html",
-                            help="Output format (default: html)")
+    p_pipeline.add_argument("--inputs", "-i", nargs="+", required=True, help="Paths to text files")
+    p_pipeline.add_argument(
+        "--traditions",
+        "-t",
+        nargs="+",
+        default=["generic"],
+        help="Tradition per input (1 or match input count)",
+    )
+    p_pipeline.add_argument(
+        "--output-dir",
+        "-o",
+        default="codex_reports",
+        help="Output directory (default: codex_reports/)",
+    )
+    p_pipeline.add_argument(
+        "--format",
+        "-f",
+        choices=["html", "json", "text"],
+        default="html",
+        help="Output format (default: html)",
+    )
     p_pipeline.set_defaults(func=cmd_pipeline)
 
     # ── explain ───────────────────────────────────────────────────────────────
@@ -969,13 +1006,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Explain pattern types, layers, and modules",
         description="Get detailed explanations of CODEX concepts.",
     )
-    p_explain.add_argument("--pattern", default=None,
-                           help="Pattern or layer type to explain (e.g. EPSILON_SIGNAL)")
-    p_explain.add_argument("--module", default=None,
-                           choices=["filter", "patterns", "comparator", "visualizer"],
-                           help="Module to explain")
-    p_explain.add_argument("--list", action="store_true",
-                           help="List all patterns and layers")
+    p_explain.add_argument(
+        "--pattern", default=None, help="Pattern or layer type to explain (e.g. EPSILON_SIGNAL)"
+    )
+    p_explain.add_argument(
+        "--module",
+        default=None,
+        choices=["filter", "patterns", "comparator", "visualizer"],
+        help="Module to explain",
+    )
+    p_explain.add_argument("--list", action="store_true", help="List all patterns and layers")
     p_explain.set_defaults(func=cmd_explain)
 
     # ── list ──────────────────────────────────────────────────────────────────
@@ -983,12 +1023,9 @@ def build_parser() -> argparse.ArgumentParser:
         "list",
         help="List available traditions and pattern types",
     )
-    p_list.add_argument("--traditions", action="store_true",
-                        help="List available traditions")
-    p_list.add_argument("--patterns", action="store_true",
-                        help="List TIEKAT pattern types")
-    p_list.add_argument("--layers", action="store_true",
-                        help="List filter layer types")
+    p_list.add_argument("--traditions", action="store_true", help="List available traditions")
+    p_list.add_argument("--patterns", action="store_true", help="List TIEKAT pattern types")
+    p_list.add_argument("--layers", action="store_true", help="List filter layer types")
     p_list.set_defaults(func=cmd_list)
 
     return parser
@@ -996,9 +1033,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+
 def main(argv=None) -> int:
     parser = build_parser()
-    args   = parser.parse_args(argv)
+    args = parser.parse_args(argv)
 
     try:
         return int(args.func(args))
