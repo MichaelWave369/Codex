@@ -19,6 +19,9 @@ dev = [
   "pytest>=8.0",
   "ruff>=0.6",
 ]
+ui = [
+  "streamlit>=1.36,<2.0",
+]
 
 [project.scripts]
 codex = "codex.cli:app"
