@@ -30,7 +30,7 @@ init_state()
 header()
 
 KNOWN_TRADITIONS = TIEKATPatternEngine.KNOWN_TRADITIONS
-APP_VERSION = "v2.0"
+APP_VERSION = "v2.1"
 
 
 def _read_upload(upload: Any) -> str:
@@ -83,6 +83,7 @@ def _list_workspace_bundles() -> list[dict[str, Any]]:
             tags = metadata.get("tags", [])
             if isinstance(tags, str):
                 tags = [t.strip() for t in tags.split(",") if t.strip()]
+            favorite = bool(metadata.get("favorite", False))
             records.append(
                 {
                     "path": json_path,
@@ -95,6 +96,7 @@ def _list_workspace_bundles() -> list[dict[str, Any]]:
                     "operator": metadata.get("operator", ""),
                     "tags": tags,
                     "description": metadata.get("description", ""),
+                    "favorite": favorite,
                     "summary_preview": _bundle_summary_preview(bundle),
                     "pin_count": len(bundle.get("pins", [])),
                     "note_count": _bundle_note_count(bundle),
@@ -113,6 +115,68 @@ def _list_workspace_bundles() -> list[dict[str, Any]]:
         except Exception:
             continue
     return records
+
+
+def _parse_exported_at(value: str) -> datetime:
+    if not value:
+        return datetime.min.replace(tzinfo=UTC)
+    normalized = value.replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return datetime.min.replace(tzinfo=UTC)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed
+
+
+def _get_recent_bundles(records: list[dict[str, Any]], limit: int = 5) -> list[dict[str, Any]]:
+    ranked = sorted(
+        records,
+        key=lambda r: _parse_exported_at(r.get("exported_at", "")),
+        reverse=True,
+    )
+    return ranked[:limit]
+
+
+def _sort_bundles(records: list[dict[str, Any]], sort_mode: str) -> list[dict[str, Any]]:
+    if sort_mode == "Oldest first":
+        return sorted(records, key=lambda r: _parse_exported_at(r.get("exported_at", "")))
+    if sort_mode == "Most pins":
+        return sorted(records, key=lambda r: r.get("pin_count", 0), reverse=True)
+    if sort_mode == "Most notes":
+        return sorted(records, key=lambda r: r.get("note_count", 0), reverse=True)
+    if sort_mode == "Alphabetical":
+        return sorted(
+            records,
+            key=lambda r: (r.get("project_name") or r.get("file_name") or "").lower(),
+        )
+    return sorted(records, key=lambda r: _parse_exported_at(r.get("exported_at", "")), reverse=True)
+
+
+def _write_bundle(path: Path, bundle: dict[str, Any]) -> None:
+    path.write_text(json.dumps(bundle, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _toggle_favorite(bundle_path: Path) -> bool:
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    metadata = bundle.setdefault("metadata", {})
+    next_value = not bool(metadata.get("favorite", False))
+    metadata["favorite"] = next_value
+    _write_bundle(bundle_path, bundle)
+    return next_value
+
+
+def _update_bundle_metadata(bundle_path: Path, metadata_updates: dict[str, Any]) -> None:
+    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+    metadata = bundle.setdefault("metadata", {})
+    metadata.update(metadata_updates)
+    _write_bundle(bundle_path, bundle)
+
+
+def _get_last_bundle(records: list[dict[str, Any]]) -> dict[str, Any] | None:
+    recent = _get_recent_bundles(records, limit=1)
+    return recent[0] if recent else None
 
 
 def _slug(value: str) -> str:
@@ -183,6 +247,8 @@ def _ensure_workspace_state() -> None:
     st.session_state.setdefault("operator_label", "")
     st.session_state.setdefault("project_tags", "")
     st.session_state.setdefault("project_description", "")
+    st.session_state.setdefault("current_bundle_path", "")
+    st.session_state.setdefault("current_bundle_favorite", False)
 
 
 def _extract_passage_index(ref: str) -> int | None:
@@ -300,6 +366,7 @@ def _save_session_payload() -> dict[str, Any]:
                 t.strip() for t in st.session_state.get("project_tags", "").split(",") if t.strip()
             ],
             "description": st.session_state.get("project_description", ""),
+            "favorite": bool(st.session_state.get("current_bundle_favorite", False)),
         },
         "inputs": {
             "analyze_text": st.session_state.get("analyze_text", ""),
@@ -359,6 +426,7 @@ def _load_session_payload(payload: dict[str, Any]) -> None:
         st.session_state["operator_label"] = meta.get("operator", "")
         st.session_state["project_tags"] = tags or ""
         st.session_state["project_description"] = meta.get("description", "")
+        st.session_state["current_bundle_favorite"] = bool(meta.get("favorite", False))
         for key, value in payload.get("inputs", {}).items():
             st.session_state[key] = value
         for key, value in payload.get("ui_state", {}).items():
@@ -401,6 +469,9 @@ def _load_session_payload(payload: dict[str, Any]) -> None:
     st.session_state["operator_label"] = payload.get("metadata", {}).get("operator", "")
     st.session_state["project_tags"] = ""
     st.session_state["project_description"] = payload.get("metadata", {}).get("description", "")
+    st.session_state["current_bundle_favorite"] = bool(
+        payload.get("metadata", {}).get("favorite", False)
+    )
     inputs = payload.get("inputs", {})
     for key, value in inputs.items():
         st.session_state[key] = value
@@ -1246,6 +1317,39 @@ def render_workspace() -> None:
     st.subheader("Workspace")
     st.caption("Local bundle library in `.codex_workspace/`.")
 
+    records = _list_workspace_bundles()
+    last_bundle = _get_last_bundle(records)
+
+    action_cols = st.columns(4)
+    with action_cols[0]:
+        if st.button("Save current session to workspace", use_container_width=True):
+            try:
+                bundle_path = _save_bundle_to_workspace(_save_session_payload())
+                st.success(f"Saved bundle: {bundle_path}")
+                st.session_state["current_bundle_path"] = str(bundle_path)
+            except Exception as exc:  # noqa: BLE001
+                st.error(f"Failed to save bundle: {exc}")
+    with action_cols[1]:
+        if st.button("Refresh workspace", use_container_width=True):
+            st.rerun()
+    with action_cols[2]:
+        if st.button("Resume Last Session", use_container_width=True):
+            if last_bundle:
+                _load_session_payload(last_bundle["bundle"])
+                st.session_state["current_bundle_path"] = str(last_bundle["path"])
+                st.success(f"Resumed {last_bundle['file_name']}.")
+            else:
+                st.info("No bundles yet. Save your first session to begin.")
+    with action_cols[3]:
+        st.download_button(
+            "Export current bundle",
+            data=json.dumps(_save_session_payload(), indent=2, ensure_ascii=False),
+            file_name="codex_operator_bundle_v2_1.json",
+            mime="application/json",
+            use_container_width=True,
+        )
+
+    st.markdown("#### Session Metadata Editor")
     meta_cols = st.columns(2)
     with meta_cols[0]:
         st.session_state["project_name"] = st.text_input(
@@ -1271,50 +1375,74 @@ def render_workspace() -> None:
             height=100,
         )
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        if st.button("Save current session to workspace", use_container_width=True):
-            try:
-                bundle_path = _save_bundle_to_workspace(_save_session_payload())
-                st.success(f"Saved bundle: {bundle_path}")
-            except Exception as exc:  # noqa: BLE001
-                st.error(f"Failed to save bundle: {exc}")
-    with c2:
-        if st.button("Refresh workspace", use_container_width=True):
-            st.rerun()
-    with c3:
-        st.download_button(
-            "Export current bundle",
-            data=json.dumps(_save_session_payload(), indent=2, ensure_ascii=False),
-            file_name="codex_operator_bundle_v2_0.json",
-            mime="application/json",
-            use_container_width=True,
-        )
+    edit_cols = st.columns(2)
+    with edit_cols[0]:
+        if st.button("Apply metadata to active session", use_container_width=True):
+            st.success("Metadata updated for current session.")
+    with edit_cols[1]:
+        if st.button("Save metadata to loaded bundle", use_container_width=True):
+            current_path = st.session_state.get("current_bundle_path", "")
+            if current_path:
+                _update_bundle_metadata(
+                    Path(current_path),
+                    {
+                        "project_name": st.session_state.get("project_name", ""),
+                        "operator": st.session_state.get("operator_label", ""),
+                        "tags": [
+                            t.strip()
+                            for t in st.session_state.get("project_tags", "").split(",")
+                            if t.strip()
+                        ],
+                        "description": st.session_state.get("project_description", ""),
+                        "favorite": bool(st.session_state.get("current_bundle_favorite", False)),
+                    },
+                )
+                st.success("Metadata saved to loaded bundle.")
+                st.rerun()
+            else:
+                st.info("Load or resume a bundle first, then save metadata.")
 
-    records = _list_workspace_bundles()
     if not records:
-        empty_html = (
-            '<div class="empty">Workspace is empty. '
-            "Save a session to create the first bundle.</div>"
-        )
-        st.markdown(
-            empty_html,
-            unsafe_allow_html=True,
-        )
+        empty_html = '<div class="empty">No bundles yet. Save your first session to begin.</div>'
+        st.markdown(empty_html, unsafe_allow_html=True)
         return
 
+    st.markdown("#### Recent Sessions")
+    recent_records = _get_recent_bundles(records, limit=5)
+    for idx, rec in enumerate(recent_records):
+        with st.container(border=True):
+            recent_badge = "🟡 Most recent" if idx == 0 else "Recent"
+            title = rec.get("project_name") or rec["file_name"]
+            st.markdown(f"**{title}** · `{rec['mode']}` · {recent_badge}")
+            st.caption(f"Exported: {rec.get('exported_at', 'n/a')}")
+            st.write(rec.get("summary_preview", "No summary available."))
+            if st.button("Resume", key=f"ws_resume_recent_{idx}", use_container_width=True):
+                _load_session_payload(rec["bundle"])
+                st.session_state["current_bundle_path"] = str(rec["path"])
+                st.success(f"Resumed {rec['file_name']}.")
+
     st.markdown("#### Workspace Browser")
-    f1, f2, f3, f4, f5 = st.columns(5)
-    with f1:
-        mode_filter = st.selectbox("Mode filter", options=["All", "Analyze", "Compare"])
-    with f2:
-        project_filter = st.text_input("Project contains", "")
-    with f3:
-        operator_filter = st.text_input("Operator contains", "")
-    with f4:
-        tag_filter = st.text_input("Tag contains", "")
-    with f5:
-        query_filter = st.text_input("Search text", "")
+    with st.container(border=True):
+        f1, f2, f3 = st.columns(3)
+        with f1:
+            mode_filter = st.selectbox("Mode", options=["All", "Analyze", "Compare"])
+            sort_mode = st.selectbox(
+                "Sort",
+                options=[
+                    "Newest first",
+                    "Oldest first",
+                    "Most pins",
+                    "Most notes",
+                    "Alphabetical",
+                ],
+            )
+        with f2:
+            project_filter = st.text_input("Project contains", "")
+            operator_filter = st.text_input("Operator contains", "")
+        with f3:
+            tag_filter = st.text_input("Tag contains", "")
+            query_filter = st.text_input("Search text", "")
+            favorites_only = st.checkbox("Favorites only", value=False)
 
     filtered_records = []
     for rec in records:
@@ -1325,6 +1453,8 @@ def render_workspace() -> None:
         if operator_filter.lower() not in rec.get("operator", "").lower():
             continue
         if tag_filter and not any(tag_filter.lower() in t.lower() for t in rec.get("tags", [])):
+            continue
+        if favorites_only and not rec.get("favorite", False):
             continue
         haystack = " ".join(
             [
@@ -1337,44 +1467,62 @@ def render_workspace() -> None:
             continue
         filtered_records.append(rec)
 
+    filtered_records = _sort_bundles(filtered_records, sort_mode)
+    if favorites_only:
+        filtered_records = sorted(filtered_records, key=lambda r: not r.get("favorite", False))
+
     if not filtered_records:
-        st.markdown(
-            '<div class="empty">No bundles match current filters.</div>',
-            unsafe_allow_html=True,
-        )
+        empty_filtered_html = '<div class="empty">No bundles match current filters.</div>'
+        st.markdown(empty_filtered_html, unsafe_allow_html=True)
+
+    selected_path = st.session_state.get("current_bundle_path", "")
     for idx, rec in enumerate(filtered_records):
         with st.container(border=True):
             source_label = rec["source_labels"].get("analyze") or rec["source_labels"].get(
                 "compare_a"
             )
-            tradition_label = rec["traditions"].get("analyze") or rec["traditions"].get("compare_a")
-            st.markdown(f"**{rec['file_name']}** · `{rec['version']}` · `{rec['mode']}`")
-            st.caption(f"Exported: {rec.get('exported_at', 'n/a')}")
+            dominant_pattern = rec["bundle"].get("summaries", {}).get("analyze", "")[:80] or "n/a"
+            summary_preview = rec.get("summary_preview", "No summary available.")
+            card_title = rec.get("project_name") or rec["file_name"]
+            star = "⭐" if rec.get("favorite", False) else "☆"
+            loaded_badge = " · Loaded" if selected_path == str(rec["path"]) else ""
+
+            st.markdown(f"**{star} {card_title}** `{rec['mode']}`{loaded_badge}")
+            st.caption(f"Exported: {rec.get('exported_at', 'n/a')} · File: {rec['file_name']}")
             st.write(
-                f"Project: {rec.get('project_name') or '—'} | "
+                f"Dominant pattern: {dominant_pattern} | "
                 f"Operator: {rec.get('operator') or '—'} | "
                 f"Tags: {', '.join(rec.get('tags', [])) or '—'}"
             )
-            st.write(f"Sources: {source_label or '—'}")
-            st.write(f"Traditions: {tradition_label or '—'}")
-            st.write(rec.get("summary_preview", ""))
-            st.caption(f"Pins: {rec.get('pin_count', 0)} · Notes: {rec.get('note_count', 0)}")
-            a1, a2 = st.columns(2)
+            st.write(f"Summary: {summary_preview}")
+            counts_text = f"Pins: {rec.get('pin_count', 0)} · Notes: {rec.get('note_count', 0)}"
+            st.caption(f"{counts_text} · Source: {source_label or '—'}")
+
+            a1, a2, a3 = st.columns(3)
             with a1:
                 if st.button("Load", key=f"ws_load_{idx}", use_container_width=True):
                     _load_session_payload(rec["bundle"])
+                    st.session_state["current_bundle_path"] = str(rec["path"])
                     st.success(f"Loaded {rec['file_name']} into active session.")
             with a2:
+                favorite_label = "Unfavorite" if rec.get("favorite", False) else "Favorite"
+                if st.button(favorite_label, key=f"ws_fav_{idx}", use_container_width=True):
+                    new_value = _toggle_favorite(rec["path"])
+                    if selected_path == str(rec["path"]):
+                        st.session_state["current_bundle_favorite"] = new_value
+                    st.rerun()
+            with a3:
                 confirm_key = f"ws_confirm_delete_{idx}"
                 if st.button("Delete", key=f"ws_delete_{idx}", use_container_width=True):
                     st.session_state[confirm_key] = True
-                if st.session_state.get(confirm_key):
-                    if st.button(
-                        "Confirm delete", key=f"ws_delete_yes_{idx}", use_container_width=True
-                    ):
-                        _delete_workspace_bundle(rec["path"])
-                        st.success(f"Deleted {rec['file_name']}.")
-                        st.rerun()
+                if st.session_state.get(confirm_key) and st.button(
+                    "Confirm delete", key=f"ws_delete_yes_{idx}", use_container_width=True
+                ):
+                    _delete_workspace_bundle(rec["path"])
+                    if selected_path == str(rec["path"]):
+                        st.session_state["current_bundle_path"] = ""
+                    st.success(f"Deleted {rec['file_name']}.")
+                    st.rerun()
 
     st.markdown("#### Bundle Comparison")
     bundle_options = [rec["file_name"] for rec in records]
@@ -1470,7 +1618,7 @@ mode = st.sidebar.radio(
 )
 st.session_state["mode"] = mode
 st.sidebar.markdown("---")
-st.sidebar.caption("Local-first interface. No remote persistence in v2.0.")
+st.sidebar.caption("Local-first interface. No remote persistence in v2.1.")
 
 session_upload = st.sidebar.file_uploader(
     "Import analysis bundle (.json)",
@@ -1501,4 +1649,4 @@ else:
     render_workspace()
 
 st.markdown("---")
-st.caption("CODEX Operator Studio v2.0 · local knowledge workspace over CODEX engines.")
+st.caption("CODEX Operator Studio v2.1 · local knowledge workspace over CODEX engines.")
