@@ -1,7 +1,8 @@
-"""Streamlit front-end for CODEX Operator Studio Interface v1."""
+"""Streamlit front-end for CODEX Operator Studio Interface v1.1."""
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import streamlit as st
@@ -32,6 +33,77 @@ def _read_upload(upload: Any) -> str:
     if upload is None:
         return ""
     return upload.getvalue().decode("utf-8", errors="replace")
+
+
+def _save_session_payload() -> dict[str, Any]:
+    analyze_result = st.session_state.get("analyze_result")
+    compare_result = st.session_state.get("compare_result")
+    return {
+        "mode": st.session_state.get("mode", "Analyze"),
+        "inputs": {
+            "analyze_text": st.session_state.get("analyze_text", ""),
+            "analyze_source": st.session_state.get("analyze_source", "Operator Input"),
+            "analyze_tradition": st.session_state.get("analyze_tradition", "generic"),
+            "compare_text_a": st.session_state.get("compare_text_a", ""),
+            "compare_text_b": st.session_state.get("compare_text_b", ""),
+            "compare_source_a": st.session_state.get("compare_source_a", "Text A"),
+            "compare_source_b": st.session_state.get("compare_source_b", "Text B"),
+            "compare_tradition_a": st.session_state.get("compare_tradition_a", "generic"),
+            "compare_tradition_b": st.session_state.get("compare_tradition_b", "generic"),
+        },
+        "results": {
+            "analyze": {
+                "pattern_dict": analyze_result.get("pattern_dict") if analyze_result else None,
+                "filter_dict": analyze_result.get("filter_dict") if analyze_result else None,
+                "pattern_text": analyze_result.get("pattern_text") if analyze_result else "",
+                "filter_text": analyze_result.get("filter_text") if analyze_result else "",
+                "pattern_markdown": (
+                    analyze_result.get("pattern_markdown") if analyze_result else ""
+                ),
+                "filter_markdown": analyze_result.get("filter_markdown") if analyze_result else "",
+                "html": analyze_result.get("html") if analyze_result else "",
+            },
+            "compare": {
+                "comparison_dict": (
+                    compare_result.get("comparison_dict") if compare_result else None
+                ),
+                "dashboard_text": compare_result.get("dashboard_text") if compare_result else "",
+                "markdown": compare_result.get("markdown") if compare_result else "",
+                "html": compare_result.get("html") if compare_result else "",
+            },
+        },
+    }
+
+
+def _load_session_payload(payload: dict[str, Any]) -> None:
+    inputs = payload.get("inputs", {})
+    for key, value in inputs.items():
+        st.session_state[key] = value
+
+    st.session_state["mode"] = payload.get("mode", "Analyze")
+
+    analyze = payload.get("results", {}).get("analyze", {})
+    if analyze.get("pattern_dict") and analyze.get("filter_dict"):
+        st.session_state["analyze_result"] = {
+            "pattern_dict": analyze["pattern_dict"],
+            "filter_dict": analyze["filter_dict"],
+            "pattern_text": analyze.get("pattern_text", ""),
+            "filter_text": analyze.get("filter_text", ""),
+            "pattern_markdown": analyze.get("pattern_markdown", ""),
+            "filter_markdown": analyze.get("filter_markdown", ""),
+            "html": analyze.get("html", ""),
+            "loaded_from_session": True,
+        }
+
+    compare = payload.get("results", {}).get("compare", {})
+    if compare.get("comparison_dict"):
+        st.session_state["compare_result"] = {
+            "comparison_dict": compare["comparison_dict"],
+            "dashboard_text": compare.get("dashboard_text", ""),
+            "markdown": compare.get("markdown", ""),
+            "html": compare.get("html", ""),
+            "loaded_from_session": True,
+        }
 
 
 def run_analyze(text: str, tradition: str, source: str) -> dict[str, Any]:
@@ -93,6 +165,26 @@ def run_compare(
     }
 
 
+def _exports_block(items: list[tuple[str, str, str]], html: str, html_name: str) -> None:
+    st.markdown("#### Exports")
+    d1, d2, d3 = st.columns(3)
+    with d1:
+        for label, content, filename in items[:2]:
+            text_download(label, content, filename)
+    with d2:
+        for label, content, filename in items[2:4]:
+            text_download(label, content, filename)
+    with d3:
+        if html:
+            st.download_button(
+                "Download HTML",
+                data=html,
+                file_name=html_name,
+                mime="text/html",
+                use_container_width=True,
+            )
+
+
 def render_analyze() -> None:
     st.subheader("Analyze")
     ctl1, ctl2, ctl3 = st.columns([1, 1, 2])
@@ -137,10 +229,17 @@ def render_analyze() -> None:
 
     result = st.session_state.get("analyze_result")
     if not result:
+        st.markdown(
+            (
+                '<div class="empty">No analysis yet. Paste text and run analysis '
+                "to populate tabs.</div>"
+            ),
+            unsafe_allow_html=True,
+        )
         return
 
-    pattern_report = result["pattern_report"]
-    filter_report = result["filter_report"]
+    pattern_dict = result.get("pattern_dict", {})
+    filter_dict = result.get("filter_dict", {})
 
     tab_overview, tab_patterns, tab_filter, tab_seams, tab_raw = st.tabs(
         ["Overview", "Patterns", "Filter Map", "Seams", "Raw JSON"]
@@ -149,86 +248,111 @@ def render_analyze() -> None:
     with tab_overview:
         metric_cards(
             [
-                ("Word Count", str(pattern_report.word_count)),
-                ("Sentence Count", str(pattern_report.sentence_count)),
-                ("Verse Count", str(pattern_report.verse_count)),
-                ("Match Count", str(pattern_report.match_count)),
-                ("High Confidence", str(len(pattern_report.high_confidence_matches))),
-                ("Epsilon Density", f"{pattern_report.epsilon_density:.4f}"),
-                ("Omega Density", f"{pattern_report.omega_density:.4f}"),
-                ("C* Density", f"{pattern_report.c_star_density:.4f}"),
+                ("Word Count", str(pattern_dict.get("word_count", 0))),
+                ("Sentence Count", str(pattern_dict.get("sentence_count", 0))),
+                ("Verse Count", str(pattern_dict.get("verse_count", 0))),
+                ("Match Count", str(pattern_dict.get("match_count", 0))),
+                ("High Confidence", str(pattern_dict.get("high_confidence", 0))),
+                ("Epsilon Density", f"{pattern_dict.get('epsilon_density', 0):.4f}"),
+                ("Omega Density", f"{pattern_dict.get('omega_density', 0):.4f}"),
+                ("C* Density", f"{pattern_dict.get('c_star_density', 0):.4f}"),
             ]
         )
-        st.markdown("#### Exports")
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            json_panel(
-                {
-                    "pattern_report": result["pattern_dict"],
-                    "filter_report": result["filter_dict"],
-                },
-                "codex_analyze",
-            )
-        with col2:
-            text_download("Download Markdown", result["pattern_markdown"], "codex_patterns.md")
-            text_download("Download Filter Markdown", result["filter_markdown"], "codex_filter.md")
-        with col3:
-            text_download("Download Dashboard Text", result["pattern_text"], "codex_patterns.txt")
-            text_download("Download Filter Text", result["filter_text"], "codex_filter.txt")
-        with col4:
-            st.download_button(
-                "Download HTML",
-                data=result["html"],
-                file_name="codex_analyze.html",
-                mime="text/html",
-                use_container_width=True,
-            )
+        _exports_block(
+            [
+                ("Patterns Markdown", result.get("pattern_markdown", ""), "codex_patterns.md"),
+                ("Filter Markdown", result.get("filter_markdown", ""), "codex_filter.md"),
+                ("Patterns Text", result.get("pattern_text", ""), "codex_patterns.txt"),
+                ("Filter Text", result.get("filter_text", ""), "codex_filter.txt"),
+            ],
+            html=result.get("html", ""),
+            html_name="codex_analyze.html",
+        )
 
     with tab_patterns:
-        matches = pattern_report.matches
-        pattern_options = ["ALL"] + sorted({m.pattern_type.value for m in matches})
-        confidence_options = ["ALL"] + sorted({m.confidence.value for m in matches})
+        matches = pattern_dict.get("matches", [])
+        if not matches:
+            st.markdown(
+                '<div class="empty">No pattern matches found for this run.</div>',
+                unsafe_allow_html=True,
+            )
+        pattern_options = ["ALL"] + sorted({m.get("pattern_type", "") for m in matches})
+        confidence_options = ["ALL"] + sorted({m.get("confidence", "") for m in matches})
 
-        f1, f2, f3 = st.columns(3)
+        f1, f2, f3, f4 = st.columns(4)
         with f1:
             selected_pattern = st.selectbox("Pattern type", pattern_options)
         with f2:
             selected_conf = st.selectbox("Confidence", confidence_options)
         with f3:
-            high_only = st.checkbox("High/Structural only", value=False)
+            high_only = st.checkbox("High confidence only", value=False)
+        with f4:
+            structural_only = st.checkbox("Structural only", value=False)
 
+        shown = 0
         for match in matches:
-            if selected_pattern != "ALL" and match.pattern_type.value != selected_pattern:
+            conf = match.get("confidence", "")
+            if selected_pattern != "ALL" and match.get("pattern_type") != selected_pattern:
                 continue
-            if selected_conf != "ALL" and match.confidence.value != selected_conf:
+            if selected_conf != "ALL" and conf != selected_conf:
                 continue
-            if high_only and match.confidence not in (Confidence.HIGH, Confidence.STRUCTURAL):
+            if high_only and conf not in {Confidence.HIGH.value, Confidence.STRUCTURAL.value}:
+                continue
+            if structural_only and conf != Confidence.STRUCTURAL.value:
                 continue
 
+            shown += 1
             with st.container(border=True):
-                st.markdown(f"**{match.pattern_type.value}** · `{match.confidence.value}`")
-                st.caption(match.tiekat_principle)
-                st.write(match.description)
-                if match.structural_value is not None:
-                    st.write(f"Structural value: `{match.structural_value}`")
-                evidence_block([e.excerpt for e in match.evidence], "No excerpts for this match.")
+                st.markdown(f"**{match.get('pattern_type', 'UNKNOWN')}** · `{conf}`")
+                st.caption(match.get("tiekat_principle", ""))
+                st.write(match.get("description", ""))
+                if match.get("structural_value") is not None:
+                    st.write(f"Structural value: `{match['structural_value']}`")
+                excerpts = [
+                    e.get("excerpt", "") for e in match.get("evidence", []) if e.get("excerpt")
+                ]
+                evidence_block(excerpts, "No excerpts for this match.")
+        if shown == 0 and matches:
+            st.markdown(
+                '<div class="empty">No matches satisfy current filters.</div>',
+                unsafe_allow_html=True,
+            )
 
     with tab_filter:
-        for passage in filter_report.passages:
-            with st.container(border=True):
-                st.markdown(
-                    f"**Passage {passage.passage_index}** · "
-                    f"coherence `{passage.coherence_score:.3f}` · "
-                    f"`{passage.coherence_level.value}`"
-                )
-                st.write(passage.passage_text)
-                c1, c2 = st.columns(2)
-                c1.write(f"Signal hits: **{passage.signal_hits}**")
-                c2.write(f"Filter hits: **{passage.filter_hits}**")
-                st.caption(passage.recovery_note)
+        passages = filter_dict.get("passages", [])
+        if not passages:
+            st.markdown(
+                '<div class="empty">No passage analyses available.</div>',
+                unsafe_allow_html=True,
+            )
+        for passage in passages:
+            idx = passage.get("passage_index", "?")
+            score = passage.get("coherence_score", 0)
+            level = passage.get("coherence_level", "UNKNOWN")
+            with st.expander(
+                f"Passage {idx} · coherence {score:.3f} · {level}",
+                expanded=False,
+            ):
+                st.write(passage.get("passage_text", passage.get("passage_preview", "")))
+                m1, m2, m3 = st.columns(3)
+                m1.write(f"Signal hits: **{passage.get('signal_hits', 0)}**")
+                m2.write(f"Filter hits: **{passage.get('filter_hits', 0)}**")
+                m3.write(f"Words: **{passage.get('word_count', 0)}**")
+                st.write(f"Recovery note: {passage.get('recovery_note', '—')}")
+                st.write("Layer counts:")
+                st.json(passage.get("layer_counts", {}), expanded=False)
+                hits = passage.get("hits", [])
+                if hits:
+                    st.write("Detected hits:")
+                    for hit in hits:
+                        st.markdown(f"- `{hit.get('layer_type', 'LAYER')}`: {hit.get('note', '')}")
+                        if hit.get("excerpt"):
+                            evidence_block([hit["excerpt"]])
+                else:
+                    st.caption("No explicit hit excerpts recorded for this passage.")
 
     with tab_seams:
-        seams = filter_report.editorial_seams
+        seams = filter_dict.get("editorial_seams", [])
         if not seams:
             st.markdown(
                 '<div class="empty">No editorial seams detected for this run.</div>',
@@ -236,21 +360,24 @@ def render_analyze() -> None:
             )
         for seam in seams:
             with st.container(border=True):
-                st.markdown(f"**{seam.seam_id}** · `{seam.confidence.value}`")
-                st.write(
-                    f"Passage before/after: {seam.passage_before} → {seam.passage_after} | "
-                    f"Coherence drop: {seam.coherence_drop:.3f}"
+                st.markdown(
+                    f"**{seam.get('seam_id', 'SEAM')}** · `{seam.get('confidence', 'N/A')}`"
                 )
-                st.write(f"Filter layers: {', '.join(seam.filter_layers) or 'None'}")
-                st.write(f"Signal layers: {', '.join(seam.signal_layers) or 'None'}")
-                evidence_block(seam.evidence, "No seam evidence excerpts.")
-                st.caption(seam.scholarly_parallel)
+                st.write(
+                    f"Passage before/after: {seam.get('passage_before')} "
+                    f"→ {seam.get('passage_after')} | "
+                    f"Coherence drop: {seam.get('coherence_drop', 0):.3f}"
+                )
+                st.write(f"Filter layers: {', '.join(seam.get('filter_layers', [])) or 'None'}")
+                st.write(f"Signal layers: {', '.join(seam.get('signal_layers', [])) or 'None'}")
+                evidence_block(seam.get("evidence", []), "No seam evidence excerpts.")
+                st.caption(seam.get("scholarly_parallel", ""))
 
     with tab_raw:
         json_panel(
             {
-                "pattern_report": result["pattern_dict"],
-                "filter_report": result["filter_dict"],
+                "pattern_report": pattern_dict,
+                "filter_report": filter_dict,
             },
             "codex_analyze_raw",
         )
@@ -336,9 +463,13 @@ def render_compare() -> None:
 
     result = st.session_state.get("compare_result")
     if not result:
+        st.markdown(
+            '<div class="empty">No comparison yet. Provide both texts and run comparison.</div>',
+            unsafe_allow_html=True,
+        )
         return
 
-    comparison = result["comparison"]
+    comparison_dict = result.get("comparison_dict", {})
     tab_overview, tab_shared, tab_div, tab_raw = st.tabs(
         ["Overview", "Shared Signals", "Divergence", "Raw JSON"]
     )
@@ -346,71 +477,67 @@ def render_compare() -> None:
     with tab_overview:
         metric_cards(
             [
-                ("Convergence Index", f"{comparison.convergence_index:.4f}"),
-                ("Convergence State", comparison.convergence_state),
-                ("Shared Pattern Count", str(comparison.shared_pattern_count)),
-                ("Epsilon Δ", f"{comparison.epsilon_delta:.4f}"),
-                ("Omega Δ", f"{comparison.omega_delta:.4f}"),
-                ("C* Δ", f"{comparison.c_star_delta:.4f}"),
+                ("Convergence Index", f"{comparison_dict.get('convergence_index', 0):.4f}"),
+                ("Convergence State", comparison_dict.get("convergence_state", "UNKNOWN")),
+                ("Shared Pattern Count", str(comparison_dict.get("shared_pattern_count", 0))),
+                ("Epsilon Δ", f"{comparison_dict.get('epsilon_delta', 0):.4f}"),
+                ("Omega Δ", f"{comparison_dict.get('omega_delta', 0):.4f}"),
+                ("C* Δ", f"{comparison_dict.get('c_star_delta', 0):.4f}"),
             ]
         )
-        st.markdown("#### Exports")
-        c1, c2, c3, c4 = st.columns(4)
-        with c1:
-            json_panel(result["comparison_dict"], "codex_compare")
-        with c2:
-            text_download("Download Markdown", result["markdown"], "codex_compare.md")
-        with c3:
-            text_download("Download Dashboard Text", result["dashboard_text"], "codex_compare.txt")
-        with c4:
-            st.download_button(
-                "Download HTML",
-                data=result["html"],
-                file_name="codex_compare.html",
-                mime="text/html",
-                use_container_width=True,
-            )
+        _exports_block(
+            [
+                ("Compare Markdown", result.get("markdown", ""), "codex_compare.md"),
+                ("Compare Dashboard", result.get("dashboard_text", ""), "codex_compare.txt"),
+                ("Source A", st.session_state.get("compare_source_a", ""), "source_a.txt"),
+                ("Source B", st.session_state.get("compare_source_b", ""), "source_b.txt"),
+            ],
+            html=result.get("html", ""),
+            html_name="codex_compare.html",
+        )
 
     with tab_shared:
-        if not comparison.shared_signals:
+        shared = comparison_dict.get("shared_signals", [])
+        if not shared:
             st.markdown(
                 '<div class="empty">No shared signals above threshold.</div>',
                 unsafe_allow_html=True,
             )
-        for signal in comparison.shared_signals:
+        for signal in shared:
             with st.container(border=True):
                 st.markdown(
-                    f"**{signal.pattern_type.value}** · "
-                    f"convergence `{signal.convergence_score:.3f}`"
+                    f"**{signal.get('pattern_type', 'UNKNOWN')}** · "
+                    f"convergence `{signal.get('convergence_score', 0):.3f}`"
                 )
-                st.caption(signal.tiekat_principle)
-                st.write(f"A ({signal.source_a}):")
-                evidence_block([signal.evidence_a])
-                st.write(f"B ({signal.source_b}):")
-                evidence_block([signal.evidence_b])
+                st.caption(signal.get("tiekat_principle", ""))
+                st.write(f"A ({signal.get('source_a', 'A')}):")
+                evidence_block([signal.get("evidence_a", "")])
+                st.write(f"B ({signal.get('source_b', 'B')}):")
+                evidence_block([signal.get("evidence_b", "")])
 
     with tab_div:
-        if not comparison.divergence_signals:
+        divergences = comparison_dict.get("divergence_signals", [])
+        if not divergences:
             st.markdown(
                 '<div class="empty">No major divergence signals detected.</div>',
                 unsafe_allow_html=True,
             )
-        for divergence in comparison.divergence_signals:
+        for divergence in divergences:
             with st.container(border=True):
-                st.markdown(f"**{divergence.pattern_type.value}**")
-                st.caption(divergence.tiekat_principle)
+                st.markdown(f"**{divergence.get('pattern_type', 'UNKNOWN')}**")
+                st.caption(divergence.get("tiekat_principle", ""))
                 st.write(
-                    f"Strong in: **{divergence.strong_in}** | "
-                    f"Weak/Absent in: **{divergence.weak_or_absent_in}**"
+                    f"Strong in: **{divergence.get('strong_in', '?')}** | "
+                    f"Weak/Absent in: **{divergence.get('weak_or_absent_in', '?')}**"
                 )
                 st.write(
-                    f"Density strong: `{divergence.density_strong:.4f}` | "
-                    f"Density weak: `{divergence.density_weak:.4f}`"
+                    f"Density strong: `{divergence.get('density_strong', 0):.4f}` | "
+                    f"Density weak: `{divergence.get('density_weak', 0):.4f}`"
                 )
-                st.write(divergence.interpretation)
+                st.write(divergence.get("interpretation", ""))
 
     with tab_raw:
-        json_panel(result["comparison_dict"], "codex_compare_raw")
+        json_panel(comparison_dict, "codex_compare_raw")
 
 
 mode = st.sidebar.radio(
@@ -420,8 +547,28 @@ mode = st.sidebar.radio(
 )
 st.session_state["mode"] = mode
 st.sidebar.markdown("---")
-st.sidebar.caption("Local-first interface. No remote persistence in v1.")
-st.sidebar.code("session_state only")
+st.sidebar.caption("Local-first interface. No remote persistence in v1.1.")
+
+session_upload = st.sidebar.file_uploader(
+    "Import session (.json)",
+    type=["json"],
+    key="session_import",
+)
+if session_upload is not None:
+    try:
+        _load_session_payload(json.loads(session_upload.getvalue().decode("utf-8")))
+        st.sidebar.success("Session imported.")
+    except Exception as exc:  # noqa: BLE001 - UI feedback only
+        st.sidebar.error(f"Invalid session file: {exc}")
+
+session_blob = json.dumps(_save_session_payload(), indent=2, ensure_ascii=False)
+st.sidebar.download_button(
+    "Export session",
+    data=session_blob,
+    file_name="codex_operator_session.json",
+    mime="application/json",
+    use_container_width=True,
+)
 
 if mode == "Analyze":
     render_analyze()
@@ -429,4 +576,4 @@ else:
     render_compare()
 
 st.markdown("---")
-st.caption("CODEX Operator Studio v1 · additive UI layer over existing CODEX engines.")
+st.caption("CODEX Operator Studio v1.1 · additive UI layer over existing CODEX engines.")
