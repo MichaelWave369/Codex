@@ -98,30 +98,34 @@ The CI workflow runs:
 
 Please read [docs/ETHICS.md](docs/ETHICS.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before extending this project.
 
-## CODEX Operator Studio (Streamlit, v1.4)
+## CODEX Operator Studio (Streamlit, v2.0)
 
-CODEX Operator Studio is a local-first operator interface for running the existing CODEX engines without replacing CLI workflows.
+CODEX Operator Studio is a local-first operator interface for running existing CODEX engines
+without replacing CLI workflows.
 
-### What it provides
+### Modes
 
-- **Analyze mode**: run TIEKAT + Institutional Filter on one text.
-- **Compare mode**: run cross-tradition comparison on two texts.
+- **Analyze**: run TIEKAT + Institutional Filter on one text.
+- **Compare**: run cross-tradition comparison on two texts.
+- **Workspace**: browse and curate saved local analysis bundles.
+
+### v2.0 workspace features
+
+- Local workspace storage in **`.codex_workspace/`** (auto-created when needed).
+- **Save current session to workspace** from the Workspace mode toolbar.
+- **Bundle browser** with metadata, mode filters, text/tag/operator search, and load/delete actions.
+- **Findings index** aggregated across workspace bundles from pinned findings.
+- **Notes index** aggregated across workspace bundles with searchable previews.
+- **Bundle comparison** panel for side-by-side metadata/signal inspection.
+- Bundle export/import remains local-first (no remote persistence layer).
+
+### Existing analysis features
+
 - Structured tabs for overview, patterns/filter/seams/shared/divergence, and raw JSON.
-- **Passage Inspector** in Filter Map: expandable per-passage details (coherence, hits, layer counts, notes, evidence).
-- **Pattern Explorer filters**: pattern type, confidence, high-confidence-only, structural-only.
-- **Coherence charts**: per-passage line + level-distinguished scatter views.
-- **Pattern distribution chart**: compact counts by pattern type (filtered vs full set).
-- **Side-by-side comparison evidence**: two-column A/B reading in Shared Signals and Divergence tabs.
-- **Coherence navigation**: choose passage index and jump to highlighted passage context.
-- **Pattern ↔ passage linking**: pattern focus filters Filter Map; selected passage shows active patterns/evidence.
-- **Delta Lens (Compare)**: toggle display between all, strongest convergence, and strongest divergence views.
-- **Insight summaries**: deterministic overview summaries for Analyze and Compare tabs.
-- **Saved analysis bundles**: export/import full local workstation bundles including mode, inputs, outputs, UI state, notes, and pins.
-- **Analyst notes**: notes for overall analysis/comparison and selected findings.
-- **Pinned findings**: pin passages, patterns, seams, shared signals, and divergences.
-- **Research Summary / Workbench**: synthesized summary + notes + pins with Markdown export.
+- Passage inspector, pattern filters, coherence charts, distribution chart, and Pattern ↔ Passage linking.
+- Side-by-side comparison evidence and Delta Lens for convergence/divergence focus.
+- Deterministic Analyze/Compare summaries, analyst notes, pinned findings, and Workbench Markdown export.
 - Export actions for JSON, Markdown, dashboard text, and HTML.
-- Session-state-only behavior (no database in v1).
 
 ### Install UI dependency
 
@@ -137,8 +141,8 @@ streamlit run codex_operator/app.py
 
 ### Quick usage
 
-1. Choose **Analyze** or **Compare** mode.
-2. Paste text (or upload `.txt` / `.md`).
-3. Select tradition(s) and source label(s).
-4. Run analysis and inspect structured tabs.
-5. Export JSON/Markdown/text/HTML outputs from the results pane.
+1. Choose **Analyze**, **Compare**, or **Workspace** mode.
+2. Paste text (or upload `.txt` / `.md`) for Analyze/Compare.
+3. Select tradition(s) and source label(s), then run analysis.
+4. Save sessions into Workspace for local bundle library management.
+5. Use Workspace browser/indexes/comparison to revisit findings and notes.

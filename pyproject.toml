@@ -43,7 +43,10 @@ version = "0.1.0"
 description = "Deterministic symbolic analysis CLI for ancient wisdom traditions"
 readme = "README.md"
 authors = ["CODEX contributors"]
-packages = [{ include = "codex", from = "src" }]
+packages = [
+  { include = "codex", from = "src" },
+  { include = "codex_operator", from = "." },
+]
 
 [tool.ruff]
 line-length = 100
