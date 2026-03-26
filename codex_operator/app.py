@@ -1,9 +1,10 @@
-"""Streamlit front-end for CODEX Operator Studio Interface v1.3."""
+"""Streamlit front-end for CODEX Operator Studio Interface v1.4."""
 
 from __future__ import annotations
 
 import json
 import re
+from datetime import UTC, datetime
 from typing import Any
 
 import streamlit as st
@@ -28,12 +29,24 @@ init_state()
 header()
 
 KNOWN_TRADITIONS = TIEKATPatternEngine.KNOWN_TRADITIONS
+APP_VERSION = "v1.4"
 
 
 def _read_upload(upload: Any) -> str:
     if upload is None:
         return ""
     return upload.getvalue().decode("utf-8", errors="replace")
+
+
+def _ensure_workspace_state() -> None:
+    st.session_state.setdefault(
+        "analyst_notes",
+        {
+            "analyze": {"overall": "", "passage": {}, "pattern": {}},
+            "compare": {"overall": "", "shared": {}, "divergence": {}},
+        },
+    )
+    st.session_state.setdefault("pinned_findings", [])
 
 
 def _extract_passage_index(ref: str) -> int | None:
@@ -139,7 +152,10 @@ def _save_session_payload() -> dict[str, Any]:
     analyze_result = st.session_state.get("analyze_result")
     compare_result = st.session_state.get("compare_result")
     return {
+        "version": APP_VERSION,
+        "exported_at": datetime.now(UTC).isoformat(),
         "mode": st.session_state.get("mode", "Analyze"),
+        "metadata": {"app": "CODEX Operator Studio", "schema": "analysis_bundle"},
         "inputs": {
             "analyze_text": st.session_state.get("analyze_text", ""),
             "analyze_source": st.session_state.get("analyze_source", "Operator Input"),
@@ -172,10 +188,62 @@ def _save_session_payload() -> dict[str, Any]:
                 "html": compare_result.get("html") if compare_result else "",
             },
         },
+        "ui_state": {
+            "selected_passage_index": st.session_state.get("selected_passage_index"),
+            "pattern_focus": st.session_state.get("pattern_focus", "ALL"),
+            "delta_lens_mode": st.session_state.get("delta_lens_mode", "All"),
+            "pattern_dist_scope": st.session_state.get("pattern_dist_scope", "Filtered set"),
+        },
+        "summaries": {
+            "analyze": st.session_state.get("analyze_summary_text", ""),
+            "compare": st.session_state.get("compare_summary_text", ""),
+        },
+        "notes": st.session_state.get("analyst_notes", {}),
+        "pins": st.session_state.get("pinned_findings", []),
     }
 
 
 def _load_session_payload(payload: dict[str, Any]) -> None:
+    if "version" in payload and "inputs" in payload and "results" in payload:
+        st.session_state["mode"] = payload.get("mode", "Analyze")
+        for key, value in payload.get("inputs", {}).items():
+            st.session_state[key] = value
+        for key, value in payload.get("ui_state", {}).items():
+            st.session_state[key] = value
+        st.session_state["analyst_notes"] = payload.get(
+            "notes",
+            {
+                "analyze": {"overall": "", "passage": {}, "pattern": {}},
+                "compare": {"overall": "", "shared": {}, "divergence": {}},
+            },
+        )
+        st.session_state["pinned_findings"] = payload.get("pins", [])
+        st.session_state["analyze_summary_text"] = payload.get("summaries", {}).get("analyze", "")
+        st.session_state["compare_summary_text"] = payload.get("summaries", {}).get("compare", "")
+        analyze = payload.get("results", {}).get("analyze", {})
+        if analyze.get("pattern_dict") and analyze.get("filter_dict"):
+            st.session_state["analyze_result"] = {
+                "pattern_dict": analyze["pattern_dict"],
+                "filter_dict": analyze["filter_dict"],
+                "pattern_text": analyze.get("pattern_text", ""),
+                "filter_text": analyze.get("filter_text", ""),
+                "pattern_markdown": analyze.get("pattern_markdown", ""),
+                "filter_markdown": analyze.get("filter_markdown", ""),
+                "html": analyze.get("html", ""),
+                "loaded_from_session": True,
+            }
+        compare = payload.get("results", {}).get("compare", {})
+        if compare.get("comparison_dict"):
+            st.session_state["compare_result"] = {
+                "comparison_dict": compare["comparison_dict"],
+                "dashboard_text": compare.get("dashboard_text", ""),
+                "markdown": compare.get("markdown", ""),
+                "html": compare.get("html", ""),
+                "loaded_from_session": True,
+            }
+        return
+
+    # Backward compatibility with pre-v1.4 payloads.
     inputs = payload.get("inputs", {})
     for key, value in inputs.items():
         st.session_state[key] = value
@@ -204,6 +272,56 @@ def _load_session_payload(payload: dict[str, Any]) -> None:
             "html": compare.get("html", ""),
             "loaded_from_session": True,
         }
+
+
+def _pin_finding(
+    item_type: str,
+    label: str,
+    context: str,
+    excerpt: str,
+    analyst_note: str = "",
+) -> None:
+    _ensure_workspace_state()
+    st.session_state["pinned_findings"].append(
+        {
+            "item_type": item_type,
+            "label": label,
+            "context": context,
+            "excerpt": excerpt[:400],
+            "analyst_note": analyst_note,
+            "pinned_at": datetime.now(UTC).isoformat(),
+        }
+    )
+
+
+def _workbench_markdown(
+    mode: str, summary: str, notes: dict[str, Any], pins: list[dict[str, Any]]
+) -> str:
+    lines = [
+        f"# CODEX Operator Studio {APP_VERSION} Workbench",
+        "",
+        f"**Mode:** {mode}",
+        "",
+        "## Generated Insight",
+        summary or "N/A",
+        "",
+        "## Analyst Notes",
+        f"- Overall: {notes.get('overall', '')}",
+        "",
+        "## Pinned Findings",
+    ]
+    if not pins:
+        lines.append("- None")
+    for pin in pins:
+        lines.extend(
+            [
+                f"- **{pin.get('label', 'Pinned item')}** ({pin.get('item_type', 'item')})",
+                f"  - Context: {pin.get('context', '')}",
+                f"  - Excerpt: {pin.get('excerpt', '')}",
+                f"  - Note: {pin.get('analyst_note', '')}",
+            ]
+        )
+    return "\n".join(lines)
 
 
 def run_analyze(text: str, tradition: str, source: str) -> dict[str, Any]:
@@ -341,12 +459,14 @@ def render_analyze() -> None:
     pattern_dict = result.get("pattern_dict", {})
     filter_dict = result.get("filter_dict", {})
 
-    tab_overview, tab_patterns, tab_filter, tab_seams, tab_raw = st.tabs(
-        ["Overview", "Patterns", "Filter Map", "Seams", "Raw JSON"]
+    tab_overview, tab_patterns, tab_filter, tab_seams, tab_workbench, tab_raw = st.tabs(
+        ["Overview", "Patterns", "Filter Map", "Seams", "Research Summary", "Raw JSON"]
     )
 
     with tab_overview:
-        st.info(_analyze_summary(pattern_dict, filter_dict))
+        analyze_summary = _analyze_summary(pattern_dict, filter_dict)
+        st.session_state["analyze_summary_text"] = analyze_summary
+        st.info(analyze_summary)
         metric_cards(
             [
                 ("Word Count", str(pattern_dict.get("word_count", 0))),
@@ -416,6 +536,23 @@ def render_analyze() -> None:
                     e.get("excerpt", "") for e in match.get("evidence", []) if e.get("excerpt")
                 ]
                 evidence_block(excerpts, "No excerpts for this match.")
+                pin_col, note_col = st.columns([1, 2])
+                with note_col:
+                    note_value = st.text_input(
+                        "Pattern note",
+                        key=f"note_pattern_{match.get('pattern_type', 'UNKNOWN')}_{shown}",
+                        label_visibility="collapsed",
+                        placeholder="Optional pin note…",
+                    )
+                with pin_col:
+                    if st.button("Pin pattern", key=f"pin_pattern_{shown}"):
+                        _pin_finding(
+                            item_type="pattern",
+                            label=match.get("pattern_type", "UNKNOWN"),
+                            context=f"Pattern tab · confidence {conf}",
+                            excerpt=match.get("description", ""),
+                            analyst_note=note_value,
+                        )
         if shown == 0 and matches:
             st.markdown(
                 '<div class="empty">No matches satisfy current filters.</div>',
@@ -478,6 +615,19 @@ def render_analyze() -> None:
                         evidence_block(excerpts, "No evidence excerpts.")
                 else:
                     st.caption("No linked pattern matches detected for selected passage.")
+                passage_note_key = f"an_note_passage_{selected_passage}"
+                current_note = st.session_state["analyst_notes"]["analyze"]["passage"].get(
+                    str(selected_passage), ""
+                )
+                updated = st.text_area(
+                    "Selected passage note",
+                    value=current_note,
+                    key=passage_note_key,
+                    height=90,
+                )
+                st.session_state["analyst_notes"]["analyze"]["passage"][str(selected_passage)] = (
+                    updated
+                )
 
         if not passages:
             st.markdown(
@@ -571,6 +721,13 @@ def render_analyze() -> None:
                             f"- `{match.get('pattern_type', 'UNKNOWN')}` · "
                             f"`{match.get('confidence', 'UNKNOWN')}`"
                         )
+                if st.button("Pin passage", key=f"pin_passage_{idx}"):
+                    _pin_finding(
+                        item_type="passage",
+                        label=f"Passage {idx}",
+                        context=f"Filter Map · {level}",
+                        excerpt=passage.get("passage_text", passage.get("passage_preview", "")),
+                    )
 
     with tab_seams:
         seams = filter_dict.get("editorial_seams", [])
@@ -593,6 +750,55 @@ def render_analyze() -> None:
                 st.write(f"Signal layers: {', '.join(seam.get('signal_layers', [])) or 'None'}")
                 evidence_block(seam.get("evidence", []), "No seam evidence excerpts.")
                 st.caption(seam.get("scholarly_parallel", ""))
+                if st.button("Pin seam", key=f"pin_seam_{seam.get('seam_id', 'unknown')}"):
+                    _pin_finding(
+                        item_type="seam",
+                        label=seam.get("seam_id", "SEAM"),
+                        context=f"Seams tab · {seam.get('confidence', 'N/A')}",
+                        excerpt=seam.get("interpretation", ""),
+                    )
+
+    with tab_workbench:
+        st.markdown("#### Research Summary")
+        analyze_summary = st.session_state.get("analyze_summary_text", "No generated summary yet.")
+        st.info(analyze_summary)
+        st.markdown("#### Analyst Notes")
+        st.session_state["analyst_notes"]["analyze"]["overall"] = st.text_area(
+            "Overall analysis note",
+            value=st.session_state["analyst_notes"]["analyze"].get("overall", ""),
+            key="an_note_overall",
+            height=120,
+        )
+        st.markdown("#### Pinned Findings")
+        analyze_pins = [
+            p
+            for p in st.session_state.get("pinned_findings", [])
+            if p.get("item_type") in {"passage", "pattern", "seam"}
+        ]
+        if not analyze_pins:
+            st.markdown(
+                '<div class="empty">No pinned findings yet for Analyze mode.</div>',
+                unsafe_allow_html=True,
+            )
+        for pin in analyze_pins:
+            with st.container(border=True):
+                st.markdown(f"**{pin.get('label', 'Pinned item')}** · `{pin.get('item_type')}`")
+                st.caption(pin.get("context", ""))
+                st.write(pin.get("excerpt", ""))
+                if pin.get("analyst_note"):
+                    st.write(f"Note: {pin.get('analyst_note')}")
+        st.download_button(
+            "Download Workbench Markdown",
+            data=_workbench_markdown(
+                mode="Analyze",
+                summary=analyze_summary,
+                notes=st.session_state["analyst_notes"]["analyze"],
+                pins=analyze_pins,
+            ),
+            file_name="codex_workbench_analyze.md",
+            mime="text/markdown",
+            use_container_width=True,
+        )
 
     with tab_raw:
         json_panel(
@@ -691,12 +897,14 @@ def render_compare() -> None:
         return
 
     comparison_dict = result.get("comparison_dict", {})
-    tab_overview, tab_shared, tab_div, tab_raw = st.tabs(
-        ["Overview", "Shared Signals", "Divergence", "Raw JSON"]
+    tab_overview, tab_shared, tab_div, tab_workbench, tab_raw = st.tabs(
+        ["Overview", "Shared Signals", "Divergence", "Research Summary", "Raw JSON"]
     )
 
     with tab_overview:
-        st.info(_compare_summary(comparison_dict))
+        compare_summary = _compare_summary(comparison_dict)
+        st.session_state["compare_summary_text"] = compare_summary
+        st.info(compare_summary)
         metric_cards(
             [
                 ("Convergence Index", f"{comparison_dict.get('convergence_index', 0):.4f}"),
@@ -754,6 +962,28 @@ def render_compare() -> None:
                 with right:
                     st.write(f"B ({signal.get('source_b', 'B')}):")
                     evidence_block([signal.get("evidence_b", "")])
+                signal_key = (
+                    f"{signal.get('pattern_type', 'UNKNOWN')}|"
+                    f"{signal.get('source_a', 'A')}|{signal.get('source_b', 'B')}"
+                )
+                signal_note = st.session_state["analyst_notes"]["compare"]["shared"].get(
+                    signal_key, ""
+                )
+                new_signal_note = st.text_area(
+                    "Shared signal note",
+                    value=signal_note,
+                    key=f"cmp_note_shared_{signal_key}",
+                    height=80,
+                )
+                st.session_state["analyst_notes"]["compare"]["shared"][signal_key] = new_signal_note
+                if st.button("Pin shared signal", key=f"pin_shared_{signal_key}"):
+                    _pin_finding(
+                        item_type="shared_signal",
+                        label=signal.get("pattern_type", "UNKNOWN"),
+                        context="Compare · Shared signal",
+                        excerpt=signal.get("tiekat_principle", ""),
+                        analyst_note=new_signal_note,
+                    )
 
     with tab_div:
         divergences = sorted(
@@ -786,10 +1016,76 @@ def render_compare() -> None:
                     st.write(f"Status: **{status_b}**")
                     st.write(f"Density: `{divergence.get('density_weak', 0):.4f}`")
                 st.write(divergence.get("interpretation", ""))
+                div_key = (
+                    f"{divergence.get('pattern_type', 'UNKNOWN')}|"
+                    f"{divergence.get('strong_in', '?')}"
+                )
+                div_note = st.session_state["analyst_notes"]["compare"]["divergence"].get(
+                    div_key, ""
+                )
+                new_div_note = st.text_area(
+                    "Divergence note",
+                    value=div_note,
+                    key=f"cmp_note_div_{div_key}",
+                    height=80,
+                )
+                st.session_state["analyst_notes"]["compare"]["divergence"][div_key] = new_div_note
+                if st.button("Pin divergence", key=f"pin_div_{div_key}"):
+                    _pin_finding(
+                        item_type="divergence_signal",
+                        label=divergence.get("pattern_type", "UNKNOWN"),
+                        context="Compare · Divergence",
+                        excerpt=divergence.get("interpretation", ""),
+                        analyst_note=new_div_note,
+                    )
+
+    with tab_workbench:
+        st.markdown("#### Research Summary")
+        compare_summary = st.session_state.get("compare_summary_text", "No generated summary yet.")
+        st.info(compare_summary)
+        st.markdown("#### Analyst Notes")
+        st.session_state["analyst_notes"]["compare"]["overall"] = st.text_area(
+            "Overall comparison note",
+            value=st.session_state["analyst_notes"]["compare"].get("overall", ""),
+            key="cmp_note_overall",
+            height=120,
+        )
+        st.markdown("#### Pinned Findings")
+        compare_pins = [
+            p
+            for p in st.session_state.get("pinned_findings", [])
+            if p.get("item_type") in {"shared_signal", "divergence_signal"}
+        ]
+        if not compare_pins:
+            st.markdown(
+                '<div class="empty">No pinned findings yet for Compare mode.</div>',
+                unsafe_allow_html=True,
+            )
+        for pin in compare_pins:
+            with st.container(border=True):
+                st.markdown(f"**{pin.get('label', 'Pinned item')}** · `{pin.get('item_type')}`")
+                st.caption(pin.get("context", ""))
+                st.write(pin.get("excerpt", ""))
+                if pin.get("analyst_note"):
+                    st.write(f"Note: {pin.get('analyst_note')}")
+        st.download_button(
+            "Download Workbench Markdown",
+            data=_workbench_markdown(
+                mode="Compare",
+                summary=compare_summary,
+                notes=st.session_state["analyst_notes"]["compare"],
+                pins=compare_pins,
+            ),
+            file_name="codex_workbench_compare.md",
+            mime="text/markdown",
+            use_container_width=True,
+        )
 
     with tab_raw:
         json_panel(comparison_dict, "codex_compare_raw")
 
+
+_ensure_workspace_state()
 
 mode = st.sidebar.radio(
     "Mode",
@@ -798,10 +1094,10 @@ mode = st.sidebar.radio(
 )
 st.session_state["mode"] = mode
 st.sidebar.markdown("---")
-st.sidebar.caption("Local-first interface. No remote persistence in v1.3.")
+st.sidebar.caption("Local-first interface. No remote persistence in v1.4.")
 
 session_upload = st.sidebar.file_uploader(
-    "Import session (.json)",
+    "Import analysis bundle (.json)",
     type=["json"],
     key="session_import",
 )
@@ -814,9 +1110,9 @@ if session_upload is not None:
 
 session_blob = json.dumps(_save_session_payload(), indent=2, ensure_ascii=False)
 st.sidebar.download_button(
-    "Export session",
+    "Export analysis bundle",
     data=session_blob,
-    file_name="codex_operator_session.json",
+    file_name="codex_operator_bundle_v1_4.json",
     mime="application/json",
     use_container_width=True,
 )
@@ -827,4 +1123,4 @@ else:
     render_compare()
 
 st.markdown("---")
-st.caption("CODEX Operator Studio v1.3 · additive UI layer over existing CODEX engines.")
+st.caption("CODEX Operator Studio v1.4 · additive UI layer over existing CODEX engines.")
