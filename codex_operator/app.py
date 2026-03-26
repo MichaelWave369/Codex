@@ -1,4 +1,4 @@
-"""Streamlit front-end for CODEX Operator Studio Interface v1.1."""
+"""Streamlit front-end for CODEX Operator Studio Interface v1.2."""
 
 from __future__ import annotations
 
@@ -289,6 +289,7 @@ def render_analyze() -> None:
         with f4:
             structural_only = st.checkbox("Structural only", value=False)
 
+        filtered_matches: list[dict[str, Any]] = []
         shown = 0
         for match in matches:
             conf = match.get("confidence", "")
@@ -301,6 +302,7 @@ def render_analyze() -> None:
             if structural_only and conf != Confidence.STRUCTURAL.value:
                 continue
 
+            filtered_matches.append(match)
             shown += 1
             with st.container(border=True):
                 st.markdown(f"**{match.get('pattern_type', 'UNKNOWN')}** · `{conf}`")
@@ -318,12 +320,80 @@ def render_analyze() -> None:
                 unsafe_allow_html=True,
             )
 
+        chart_scope = st.radio(
+            "Pattern distribution basis",
+            options=["Filtered set", "Full set"],
+            horizontal=True,
+            key="pattern_dist_scope",
+        )
+        source_for_chart = filtered_matches if chart_scope == "Filtered set" else matches
+        distribution: dict[str, int] = {}
+        for match in source_for_chart:
+            pattern_type = match.get("pattern_type", "UNKNOWN")
+            distribution[pattern_type] = distribution.get(pattern_type, 0) + 1
+        if distribution:
+            st.caption(
+                f"Pattern distribution chart ({chart_scope.lower()}, n={len(source_for_chart)})."
+            )
+            st.bar_chart(
+                {k: v for k, v in sorted(distribution.items(), key=lambda kv: kv[0])},
+                use_container_width=True,
+            )
+
     with tab_filter:
         passages = filter_dict.get("passages", [])
         if not passages:
             st.markdown(
                 '<div class="empty">No passage analyses available.</div>',
                 unsafe_allow_html=True,
+            )
+        if passages:
+            chart_rows = []
+            for passage in passages:
+                chart_rows.append(
+                    {
+                        "passage_index": passage.get("passage_index", 0),
+                        "coherence": passage.get("coherence_score", 0.0),
+                        "PURE_SIGNAL": (
+                            passage.get("coherence_score", 0.0)
+                            if passage.get("coherence_level") == "PURE_SIGNAL"
+                            else None
+                        ),
+                        "STRONG_SIGNAL": (
+                            passage.get("coherence_score", 0.0)
+                            if passage.get("coherence_level") == "STRONG_SIGNAL"
+                            else None
+                        ),
+                        "MIXED": (
+                            passage.get("coherence_score", 0.0)
+                            if passage.get("coherence_level") == "MIXED"
+                            else None
+                        ),
+                        "FILTERED": (
+                            passage.get("coherence_score", 0.0)
+                            if passage.get("coherence_level") == "FILTERED"
+                            else None
+                        ),
+                        "INSTITUTIONAL": (
+                            passage.get("coherence_score", 0.0)
+                            if passage.get("coherence_level") == "INSTITUTIONAL"
+                            else None
+                        ),
+                    }
+                )
+            st.caption("Coherence chart (passage index vs coherence score).")
+            st.line_chart(
+                data=chart_rows,
+                x="passage_index",
+                y=["coherence"],
+                use_container_width=True,
+            )
+            st.caption("Coherence levels (point markers by level).")
+            st.scatter_chart(
+                data=chart_rows,
+                x="passage_index",
+                y=["PURE_SIGNAL", "STRONG_SIGNAL", "MIXED", "FILTERED", "INSTITUTIONAL"],
+                use_container_width=True,
             )
         for passage in passages:
             idx = passage.get("passage_index", "?")
@@ -510,10 +580,13 @@ def render_compare() -> None:
                     f"convergence `{signal.get('convergence_score', 0):.3f}`"
                 )
                 st.caption(signal.get("tiekat_principle", ""))
-                st.write(f"A ({signal.get('source_a', 'A')}):")
-                evidence_block([signal.get("evidence_a", "")])
-                st.write(f"B ({signal.get('source_b', 'B')}):")
-                evidence_block([signal.get("evidence_b", "")])
+                left, right = st.columns(2)
+                with left:
+                    st.write(f"A ({signal.get('source_a', 'A')}):")
+                    evidence_block([signal.get("evidence_a", "")])
+                with right:
+                    st.write(f"B ({signal.get('source_b', 'B')}):")
+                    evidence_block([signal.get("evidence_b", "")])
 
     with tab_div:
         divergences = comparison_dict.get("divergence_signals", [])
@@ -526,14 +599,17 @@ def render_compare() -> None:
             with st.container(border=True):
                 st.markdown(f"**{divergence.get('pattern_type', 'UNKNOWN')}**")
                 st.caption(divergence.get("tiekat_principle", ""))
-                st.write(
-                    f"Strong in: **{divergence.get('strong_in', '?')}** | "
-                    f"Weak/Absent in: **{divergence.get('weak_or_absent_in', '?')}**"
-                )
-                st.write(
-                    f"Density strong: `{divergence.get('density_strong', 0):.4f}` | "
-                    f"Density weak: `{divergence.get('density_weak', 0):.4f}`"
-                )
+                left, right = st.columns(2)
+                with left:
+                    st.write("Tradition A")
+                    status_a = "Strong" if divergence.get("strong_in") == "A" else "Weak/Absent"
+                    st.write(f"Status: **{status_a}**")
+                    st.write(f"Density: `{divergence.get('density_strong', 0):.4f}`")
+                with right:
+                    st.write("Tradition B")
+                    status_b = "Strong" if divergence.get("strong_in") == "B" else "Weak/Absent"
+                    st.write(f"Status: **{status_b}**")
+                    st.write(f"Density: `{divergence.get('density_weak', 0):.4f}`")
                 st.write(divergence.get("interpretation", ""))
 
     with tab_raw:
@@ -547,7 +623,7 @@ mode = st.sidebar.radio(
 )
 st.session_state["mode"] = mode
 st.sidebar.markdown("---")
-st.sidebar.caption("Local-first interface. No remote persistence in v1.1.")
+st.sidebar.caption("Local-first interface. No remote persistence in v1.2.")
 
 session_upload = st.sidebar.file_uploader(
     "Import session (.json)",
@@ -576,4 +652,4 @@ else:
     render_compare()
 
 st.markdown("---")
-st.caption("CODEX Operator Studio v1.1 · additive UI layer over existing CODEX engines.")
+st.caption("CODEX Operator Studio v1.2 · additive UI layer over existing CODEX engines.")
