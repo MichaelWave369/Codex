@@ -59,17 +59,17 @@ from pathlib import Path
 from typing import Optional
 
 # ── Module imports ─────────────────────────────────────────────────────────────
-from codex_tiekat_engine import (
-    TIEKATPatternEngine,
-    PatternType,
+from codex_comparator import (
+    CodexComparator,
+    MultiComparator,
 )
 from codex_filter import (
     InstitutionalFilter,
     LayerType,
 )
-from codex_comparator import (
-    CodexComparator,
-    MultiComparator,
+from codex_tiekat_engine import (
+    PatternType,
+    TIEKATPatternEngine,
 )
 from codex_visualizer import (
     CodexVisualizer,

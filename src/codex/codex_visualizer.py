@@ -48,17 +48,17 @@ import json
 from pathlib import Path
 from typing import Optional
 
-from codex_tiekat_engine import (
-    CodexTIEKATReport,
-    PatternType,
-    C_STAR,
+from codex_comparator import (
+    ComparisonReport,
 )
 from codex_filter import (
     FilterReport,
     LayerType,
 )
-from codex_comparator import (
-    ComparisonReport,
+from codex_tiekat_engine import (
+    C_STAR,
+    CodexTIEKATReport,
+    PatternType,
 )
 
 # ── Design constants ──────────────────────────────────────────────────────────
@@ -804,9 +804,9 @@ def visualize_comparison(
     """
     One-shot: run full analysis + comparison on two texts and generate dashboard.
     """
+    from codex_comparator import CodexComparator
     from codex_filter import InstitutionalFilter
     from codex_tiekat_engine import TIEKATPatternEngine
-    from codex_comparator import CodexComparator
 
     fa = InstitutionalFilter(tradition=tradition_a)
     ta = TIEKATPatternEngine(tradition=tradition_a)
