@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Deterministic symbolic analysis CLI for ancient wisdom traditions"
 readme = "README.md"
 requires-python = ">=3.12"
-license = { file = "LICENSE" }
+license = "MIT"
 authors = [{ name = "CODEX contributors" }]
 dependencies = [
   "typer>=0.12,<1.0",
@@ -41,6 +41,7 @@ where = ["src"]
 name = "codex-consciousness-decoder"
 version = "0.1.0"
 description = "Deterministic symbolic analysis CLI for ancient wisdom traditions"
+license = "MIT"
 readme = "README.md"
 authors = ["CODEX contributors"]
 packages = [

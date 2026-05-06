@@ -153,3 +153,15 @@ streamlit run codex_operator/app.py
 3. Select tradition(s) and source label(s), then run analysis.
 4. Save sessions into Workspace for local bundle library management.
 5. Use Workspace browser/indexes/comparison to revisit findings and notes.
+
+## License
+
+Codex is released under the MIT License.
+
+The public repository contains the open symbolic-analysis runtime, schemas,
+examples, tests, documentation, and safety boundaries.
+
+Private Parallax / PHI369 canon packs, proprietary adapters, unreleased prompts,
+private source atlases, closed-source integrations, EVIE private decks, and
+other non-public PHI369 Labs materials are not included in this license unless
+explicitly published in this repository.
