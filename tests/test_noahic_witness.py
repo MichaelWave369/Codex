@@ -34,10 +34,7 @@ def test_registry_exposes_original_language_gap():
     report = witness_plan(registry)
     assert len(registry["witnesses"]) == 4
     assert report["direct_original_language_pair_available"] is False
-    gap = next(
-        x for x in registry["witnesses"]
-        if x["id"] == "jubilees_10_qumran_hebrew_gap"
-    )
+    gap = next(x for x in registry["witnesses"] if x["id"] == "jubilees_10_qumran_hebrew_gap")
     assert gap["coverage"] == "not_attested_in_identified_extant_fragments"
     assert gap["ingestion"] == "unavailable"
 
