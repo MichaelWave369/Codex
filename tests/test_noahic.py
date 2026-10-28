@@ -14,9 +14,7 @@ def records():
 def test_seed_records_include_provenance_and_controls():
     entries = load_corpus()["items"]
     assert len(entries) == 9
-    assert {item["role"] for item in entries} == {
-        "noah_medicine", "direct_noah_book", "control"
-    }
+    assert {item["role"] for item in entries} == {"noah_medicine", "direct_noah_book", "control"}
     assert all(item["sources"] and item["caution"] for item in entries)
     assert "raphael" not in records()["jubilees_10"]["agents"]
     assert records()["aramaic_levi_10_10"]["role"] != "noah_medicine"
@@ -61,6 +59,4 @@ def test_schema_rejects_duplicate_ids_and_missing_provenance():
 def test_matrix_includes_all_pairs_and_ordered_algorithm():
     entries = load_corpus()["items"]
     assert len(matrix(entries)) == 36
-    assert _ordered_shared(["a", "b", "c"], ["a", "x", "b", "c"]) == [
-        "a", "b", "c"
-    ]
+    assert _ordered_shared(["a", "b", "c"], ["a", "x", "b", "c"]) == ["a", "b", "c"]
