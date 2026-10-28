@@ -1,0 +1,230 @@
+{
+  "schema": "noahic-02/feature-audit-v0.2",
+  "scope": "Editorially curated passage-level feature attestations: no original-language collation, rarity measurement, or stemmatic inference",
+  "pair": [
+    "jubilees_10",
+    "asaf_prologue"
+  ],
+  "sources": {
+    "jubilees_10": {
+      "url": "https://axialcommons.org/read/jubilees-charles-1913/3/",
+      "edition": "R. H. Charles English translation (1913); critical edition still required"
+    },
+    "asaf_prologue": {
+      "url": "https://pages.charlotte.edu/john-reeves/research-projects/medieval-jewish-pseudepigrapha/jellineks-sefer-noah/",
+      "edition": "John C. Reeves translation of Jellinek's later Hebrew compilation; not an ancient manuscript witness"
+    }
+  },
+  "features": [
+    {
+      "id": "descendants_afflicted",
+      "label": "Noah's descendants afflicted by spirits",
+      "candidate_distinctive": false,
+      "attestations": {
+        "jubilees_10": {
+          "status": "attested",
+          "locus": "10:1-2",
+          "role": "spirit_affliction",
+          "note": "Sons report spirits afflicting descendants"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, opening episode",
+          "role": "spirit_affliction",
+          "note": "Noah's children and grandchildren report disorders"
+        }
+      }
+    },
+    {
+      "id": "noah_intercedes",
+      "label": "Noah petitions the divine for his descendants",
+      "candidate_distinctive": false,
+      "attestations": {
+        "jubilees_10": {
+          "status": "attested",
+          "locus": "10:3-6",
+          "role": "prayer",
+          "note": "Noah prays for protection"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, Noah's altar prayer",
+          "role": "prayer",
+          "note": "Noah offers sacrifices and prays"
+        }
+      }
+    },
+    {
+      "id": "one_tenth_spirits_remain",
+      "label": "One tenth of harmful spirits is left free",
+      "candidate_distinctive": true,
+      "attestations": {
+        "jubilees_10": {
+          "status": "attested",
+          "locus": "10:8-11",
+          "role": "numerical_partition",
+          "note": "One tenth remains while nine parts are restrained"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, Raphael sequesters spirits",
+          "role": "numerical_partition",
+          "note": "One tenth left free before Mastema; nine tenths implicit"
+        }
+      }
+    },
+    {
+      "id": "mastema_named_in_partition",
+      "label": "Mastema involved in spirit allocation",
+      "candidate_distinctive": true,
+      "attestations": {
+        "jubilees_10": {
+          "status": "attested",
+          "locus": "10:8-11",
+          "role": "mastema",
+          "note": "Mastema requests spirits remain"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, Raphael's intervention",
+          "role": "mastema",
+          "note": "Remaining spirits act before Prince Mastema"
+        }
+      }
+    },
+    {
+      "id": "plants_used_for_healing",
+      "label": "Angelic instruction uses plants for healing",
+      "candidate_distinctive": false,
+      "attestations": {
+        "jubilees_10": {
+          "status": "attested",
+          "locus": "10:10-12",
+          "role": "plant_healing",
+          "note": "Angels teach herb-based remedies"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, angelic instruction",
+          "role": "plant_healing",
+          "note": "Plants and medicinal remedies are taught as part of Noah account"
+        }
+      }
+    },
+    {
+      "id": "book_transmitted_to_shem",
+      "label": "Noah records remedies and gives the book to Shem",
+      "candidate_distinctive": true,
+      "attestations": {
+        "jubilees_10": {
+          "status": "attested",
+          "locus": "10:13-14",
+          "role": "shem_transmission",
+          "note": "Noah writes and gives book to Shem"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, end of narrative",
+          "role": "shem_transmission",
+          "note": "Noah gives his written knowledge to Shem"
+        }
+      }
+    },
+    {
+      "id": "mount_lubar_named",
+      "label": "Mount Lubar appears in Noah tradition",
+      "candidate_distinctive": true,
+      "attestations": {
+        "jubilees_10": {
+          "status": "attested",
+          "locus": "10:15",
+          "role": "burial_site",
+          "note": "Noah is buried at Lubar"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, first sentence",
+          "role": "revelation_site",
+          "note": "Noah receives book/revelation on Lubar"
+        }
+      }
+    },
+    {
+      "id": "raphael_explicitly_named",
+      "label": "Healing angel identified as Raphael",
+      "candidate_distinctive": true,
+      "attestations": {
+        "jubilees_10": {
+          "status": "not_attested_in_locus",
+          "locus": "10:10-12",
+          "role": null,
+          "note": "Instruction attributed to angels without naming Raphael in this specific passage"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, prayer-response episode",
+          "role": "raphael",
+          "note": "The angel is explicitly named Raphael"
+        }
+      }
+    },
+    {
+      "id": "many_languages_medical_genealogy",
+      "label": "Later sages distribute medical writing in many languages",
+      "candidate_distinctive": true,
+      "attestations": {
+        "jubilees_10": {
+          "status": "not_attested_in_locus",
+          "locus": "10:10-15",
+          "role": null,
+          "note": "This section does not state that other peoples translated Noah's medical book"
+        },
+        "asaf_prologue": {
+          "status": "attested",
+          "locus": "Medical prologue, transmission after Shem",
+          "role": "international_medicine",
+          "note": "Sages of various nations said to translate and develop medical literature"
+        }
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "razim_prologue",
+      "status": "unreviewed",
+      "note": "Not yet annotated for this exact feature catalogue; not evidence of absence"
+    },
+    {
+      "id": "aramaic_levi_10_10",
+      "status": "unreviewed",
+      "note": "Not yet annotated for this exact feature catalogue; not evidence of absence"
+    },
+    {
+      "id": "genesis_apocryphon_1q20",
+      "status": "unreviewed",
+      "note": "Not yet annotated for this exact feature catalogue; not evidence of absence"
+    },
+    {
+      "id": "tobit_6",
+      "status": "unreviewed",
+      "note": "Not yet annotated for this exact feature catalogue; not evidence of absence"
+    },
+    {
+      "id": "qumran_4q560",
+      "status": "unreviewed",
+      "note": "Not yet annotated for this exact feature catalogue; not evidence of absence"
+    },
+    {
+      "id": "qumran_11q11",
+      "status": "unreviewed",
+      "note": "Not yet annotated for this exact feature catalogue; not evidence of absence"
+    },
+    {
+      "id": "paraphrase_of_shem",
+      "status": "unreviewed",
+      "note": "Not yet annotated for this exact feature catalogue; not evidence of absence"
+    }
+  ],
+  "candidate_distinctive_policy": "A curator's proposed prioritization, not an established measure of motif rarity or statistically independent evidence",
+  "method_limit": "Convergence on a narrative trait does not prove independent transmission, manuscript genealogy, medical efficacy, or ancient authorship."
+}
