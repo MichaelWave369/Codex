@@ -105,11 +105,11 @@ def witness_plan(registry: dict[str, Any]) -> dict[str, Any]:
         and entry["relationship_to_composition"] not in NON_ORIGINAL
     ]
     direct_pair = any(
-        l["work_id"] == left
-        and r["work_id"] == right
-        and l["language"] == r["language"]
-        for l in original_witnesses
-        for r in original_witnesses
+        first["work_id"] == left
+        and second["work_id"] == right
+        and first["language"] == second["language"]
+        for first in original_witnesses
+        for second in original_witnesses
     )
     return {
         "target_pair": [left, right],
