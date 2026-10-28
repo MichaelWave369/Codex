@@ -54,11 +54,15 @@ def validate_corpus(corpus: dict[str, Any]) -> None:
         if not set(item["sequence"]).issubset(item["motifs"]):
             raise ValueError(f"Unindexed sequence motif for {identifier}")
         sources = item.get("sources")
-        if not isinstance(sources, list) or not sources or not all(
-            isinstance(source, dict)
-            and isinstance(source.get("type"), str)
-            and source.get("url", "").startswith("https://")
-            for source in sources
+        if (
+            not isinstance(sources, list)
+            or not sources
+            or not all(
+                isinstance(source, dict)
+                and isinstance(source.get("type"), str)
+                and source.get("url", "").startswith("https://")
+                for source in sources
+            )
         ):
             raise ValueError(f"At least one https source required for {identifier}")
 
@@ -69,9 +73,7 @@ def _ordered_shared(left: list[str], right: list[str]) -> list[str]:
     for i, a in enumerate(left, 1):
         for j, b in enumerate(right, 1):
             table[i][j] = (
-                table[i - 1][j - 1] + 1
-                if a == b
-                else max(table[i - 1][j], table[i][j - 1])
+                table[i - 1][j - 1] + 1 if a == b else max(table[i - 1][j], table[i][j - 1])
             )
     result: list[str] = []
     i, j = len(left), len(right)
@@ -118,14 +120,13 @@ def compare(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
 def matrix(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Return all pairwise comparisons, including the negative controls."""
     return [
-        compare(left, right)
-        for index, left in enumerate(items)
-        for right in items[index + 1 :]
+        compare(left, right) for index, left in enumerate(items) for right in items[index + 1 :]
     ]
 
 
 def render_comparison(report: dict[str, Any]) -> str:
     """Provide a citation-bearing Markdown report without inflated confidence."""
+
     def show(values: list[str]) -> str:
         return ", ".join(values) if values else "none"
 
