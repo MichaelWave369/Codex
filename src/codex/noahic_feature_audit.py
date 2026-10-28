@@ -57,10 +57,7 @@ def validate_audit(audit: dict[str, Any]) -> None:
         corpus_ids - set(pair)
     ):
         raise ValueError("Controls must cover every other corpus item")
-    if any(
-        item.get("status") != "unreviewed" or not item.get("note")
-        for item in controls
-    ):
+    if any(item.get("status") != "unreviewed" or not item.get("note") for item in controls):
         raise ValueError("Unassessed control must remain explicitly unreviewed")
     features = audit.get("features")
     if not isinstance(features, list) or not features:
