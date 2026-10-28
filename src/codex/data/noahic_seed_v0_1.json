@@ -1,0 +1,285 @@
+{
+  "schema": "noahic-01/seed-v0.1",
+  "scope": "Curated scholarly descriptions and annotation motifs, NOT a transcription or independent decipherment",
+  "provenance_policy": "Each passage links to a public text or scholarship. Editorial motif tags are hypotheses to be audited against original languages.",
+  "items": [
+    {
+      "id": "jubilees_10",
+      "work": "Book of Jubilees",
+      "locus": "Chapter 10 (verse numbering varies by edition)",
+      "period": "Second century BCE composition; surviving witnesses later",
+      "tradition": "Second Temple Jewish",
+      "role": "noah_medicine",
+      "witness": "Ancient composition transmitted in multiple traditions; use critical editions",
+      "agents": [
+        "noah",
+        "shem"
+      ],
+      "motifs": [
+        "spirit_affliction",
+        "prayer",
+        "angelic_instruction",
+        "herbal_remedy",
+        "written_record",
+        "transmission_to_shem"
+      ],
+      "sequence": [
+        "spirit_affliction",
+        "prayer",
+        "angelic_instruction",
+        "herbal_remedy",
+        "written_record",
+        "transmission_to_shem"
+      ],
+      "claim": "The narrative says angels taught Noah plant-based remedies and Noah recorded and transmitted the knowledge to Shem.",
+      "caution": "The angels are not named Raphael in this Jubilees passage; manuscripts and verse numbering differ.",
+      "sources": [
+        {
+          "type": "primary_translation",
+          "url": "https://www.sefaria.org/Book_of_Jubilees.10.1-13"
+        },
+        {
+          "type": "scholarship",
+          "url": "https://journals.sagepub.com/doi/full/10.1177/0951820718805635"
+        }
+      ]
+    },
+    {
+      "id": "asaf_prologue",
+      "work": "Prologue to Sefer Asaf ha-Rofe (in Jellinek's Sefer Noah)",
+      "locus": "Medical prologue / Book of Remedies introduction",
+      "period": "Early medieval composition; surviving manuscript tradition later",
+      "tradition": "Medieval Jewish",
+      "role": "noah_medicine",
+      "witness": "Later Hebrew text; Jellinek compilation contains distinct compositions",
+      "agents": [
+        "noah",
+        "shem",
+        "raphael"
+      ],
+      "motifs": [
+        "spirit_affliction",
+        "prayer",
+        "angelic_instruction",
+        "herbal_remedy",
+        "written_record",
+        "transmission_to_shem",
+        "mount_lubar"
+      ],
+      "sequence": [
+        "spirit_affliction",
+        "prayer",
+        "angelic_instruction",
+        "herbal_remedy",
+        "written_record",
+        "transmission_to_shem"
+      ],
+      "claim": "Prologue attributes post-Flood medicinal revelation to Raphael and says Noah passed a recorded book to Shem.",
+      "caution": "A medieval retrospective account, not independent proof of an antediluvian source or a continuous manuscript chain.",
+      "sources": [
+        {
+          "type": "scholarly_translation",
+          "url": "https://pages.charlotte.edu/john-reeves/research-projects/medieval-jewish-pseudepigrapha/jellineks-sefer-noah/"
+        }
+      ]
+    },
+    {
+      "id": "razim_prologue",
+      "work": "Sefer ha-Razim",
+      "locus": "Preface",
+      "period": "Late antique magical treatise, surviving in later textual tradition",
+      "tradition": "Late antique Jewish",
+      "role": "direct_noah_book",
+      "witness": "Reconstructed text and medieval transmissions",
+      "agents": [
+        "noah",
+        "raziel"
+      ],
+      "motifs": [
+        "angelic_instruction",
+        "written_record",
+        "pre_flood",
+        "celestial_knowledge"
+      ],
+      "sequence": [
+        "angelic_instruction",
+        "written_record"
+      ],
+      "claim": "Preface attributes a book of mysteries given by Raziel to Noah immediately before the Flood.",
+      "caution": "Distinct pre-Flood revelation and angel from the post-Flood Raphael medicinal account.",
+      "sources": [
+        {
+          "type": "scholarly_translation",
+          "url": "https://pages.charlotte.edu/john-reeves/research-projects/medieval-jewish-pseudepigrapha/jellineks-sefer-noah/"
+        },
+        {
+          "type": "publisher",
+          "url": "https://bibliovault.org/BV.book.epl?ISBN=9780891306153"
+        }
+      ]
+    },
+    {
+      "id": "aramaic_levi_10_10",
+      "work": "Aramaic Levi Document",
+      "locus": "10:10",
+      "period": "Likely third or early second century BCE; date debated",
+      "tradition": "Second Temple Jewish",
+      "role": "direct_noah_book",
+      "witness": "Specific Noah-book phrase extant in a Greek excerpt, not surviving Aramaic Qumran pieces",
+      "agents": [
+        "noah",
+        "levi",
+        "isaac"
+      ],
+      "motifs": [
+        "written_record",
+        "ritual_blood",
+        "priestly_instruction"
+      ],
+      "sequence": [],
+      "claim": "References a book attributed to Noah in connection with blood and priestly instructions.",
+      "caution": "Uncertain whether 'concerning blood' is part of the book title; NOT evidence of blood medicine.",
+      "sources": [
+        {
+          "type": "scholarship",
+          "url": "https://apocryphalstone.com/uploads/bibliography/362_Book%28s%29%20attributed.pdf"
+        }
+      ]
+    },
+    {
+      "id": "genesis_apocryphon_1q20",
+      "work": "Genesis Apocryphon (1Q20)",
+      "locus": "Column V, line 29 onward",
+      "period": "First-century BCE/CE manuscript; underlying composition earlier",
+      "tradition": "Second Temple Jewish",
+      "role": "direct_noah_book",
+      "witness": "Qumran Cave 1 Aramaic scroll; title-reading partly reconstructed",
+      "agents": [
+        "noah"
+      ],
+      "motifs": [
+        "written_record",
+        "first_person_noah",
+        "flood_narrative"
+      ],
+      "sequence": [],
+      "claim": "Preserves a probable heading for 'Book of the Words of Noah' followed by first-person Noah material.",
+      "caution": "The initial word in the reading is restored; does not identify a book of medicines.",
+      "sources": [
+        {
+          "type": "scholarship",
+          "url": "https://apocryphalstone.com/uploads/bibliography/362_Book%28s%29%20attributed.pdf"
+        }
+      ]
+    },
+    {
+      "id": "tobit_6",
+      "work": "Book of Tobit",
+      "locus": "Chapters 3, 6, and 11",
+      "period": "Second Temple period narrative",
+      "tradition": "Jewish deuterocanonical",
+      "role": "control",
+      "witness": "Ancient textual versions including Qumran fragments",
+      "agents": [
+        "raphael",
+        "tobias"
+      ],
+      "motifs": [
+        "spirit_affliction",
+        "angelic_instruction",
+        "fish_remedy"
+      ],
+      "sequence": [
+        "spirit_affliction",
+        "angelic_instruction",
+        "fish_remedy"
+      ],
+      "claim": "Raphael guides Tobias regarding fish organs used in the narrative for exorcism and healing.",
+      "caution": "No claim that Tobias used Noah's medical book; ancient ritual narrative, not medical advice.",
+      "sources": [
+        {
+          "type": "primary_translation",
+          "url": "https://bible.usccb.org/bible/tobit/6"
+        }
+      ]
+    },
+    {
+      "id": "qumran_4q560",
+      "work": "4Q560 (Aramaic incantation)",
+      "locus": "Cave 4, fragment 1",
+      "period": "Second Temple manuscript, fragmentary",
+      "tradition": "Qumran",
+      "role": "control",
+      "witness": "Aramaic fragments with lacunae and contested interpretation",
+      "agents": [],
+      "motifs": [
+        "spirit_affliction",
+        "protective_incantation"
+      ],
+      "sequence": [],
+      "claim": "Fragmentary Aramaic anti-demonic material related to bodily and domestic concerns.",
+      "caution": "No title or attribution to Noah; manuscript restoration and interpretation disputed.",
+      "sources": [
+        {
+          "type": "scholarship",
+          "url": "https://arabist.hu/volumes/volume-23/ida-frohlich-2001/"
+        },
+        {
+          "type": "bibliography",
+          "url": "https://cal.huc.edu/getbibsigla.php?myauthor=4Q560"
+        }
+      ]
+    },
+    {
+      "id": "qumran_11q11",
+      "work": "11Q11 (Apocryphal Psalms)",
+      "locus": "Qumran Cave 11",
+      "period": "Manuscript copied in first century CE",
+      "tradition": "Qumran",
+      "role": "control",
+      "witness": "Fragmentary Hebrew manuscript",
+      "agents": [],
+      "motifs": [
+        "spirit_affliction",
+        "protective_incantation",
+        "psalm_recitation"
+      ],
+      "sequence": [],
+      "claim": "Collection of songs/psalms associated with protection against demons, including Psalm 91.",
+      "caution": "No Noah book claim; this is genre-context evidence only.",
+      "sources": [
+        {
+          "type": "scholarship",
+          "url": "https://academic.oup.com/edited-volume/35006/chapter/298748176"
+        }
+      ]
+    },
+    {
+      "id": "paraphrase_of_shem",
+      "work": "Paraphrase of Shem",
+      "locus": "Nag Hammadi Codex VII, tractate 1",
+      "period": "Coptic manuscript fourth century CE; composition date debated",
+      "tradition": "Gnostic / Nag Hammadi",
+      "role": "control",
+      "witness": "Coptic Nag Hammadi manuscript",
+      "agents": [
+        "shem",
+        "derdekeas"
+      ],
+      "motifs": [
+        "flood_narrative",
+        "celestial_knowledge",
+        "revelation"
+      ],
+      "sequence": [],
+      "claim": "Shem receives a cosmic revelation concerning primordial powers and a retelling of the Flood.",
+      "caution": "No surviving claim to preserve Noah's medical remedies or lost medical book.",
+      "sources": [
+        {
+          "type": "scholarship",
+          "url": "https://ccdl.claremont.edu/digital/api/collection/cce/id/1552/download"
+        }
+      ]
+    }
+  ]
+}
