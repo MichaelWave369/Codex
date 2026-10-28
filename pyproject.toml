@@ -36,7 +36,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "codex.data.patterns" = ["*.json"]
 "codex.data.samples" = ["*.txt"]
-"codex.data" = ["noahic_seed_v0_1.json", "noahic_feature_audit_v0_2.json"]
+"codex.data" = ["noahic_seed_v0_1.json", "noahic_feature_audit_v0_2.json", "noahic_witness_registry_v0_3.json"]
 
 [tool.poetry]
 name = "codex-consciousness-decoder"
