@@ -159,9 +159,7 @@ def _script_of(token: str) -> str:
     return next(iter(seen)) if len(seen) == 1 else "mixed_or_unknown"
 
 
-def _validate_local_excerpt(
-    excerpt: dict[str, Any], registry: dict[str, Any]
-) -> dict[str, Any]:
+def _validate_local_excerpt(excerpt: dict[str, Any], registry: dict[str, Any]) -> dict[str, Any]:
     """Reject unsupported script, missing provenance, and placeholder text."""
     if excerpt.get("schema") != TRANSCRIPTION_SCHEMA:
         raise ValueError("Unsupported excerpt schema")
@@ -217,15 +215,9 @@ def compare_local_excerpts(
         return result
     left_tokens = _unicode_tokens(left["text"])
     right_tokens = _unicode_tokens(right["text"])
-    left_bigrams = {
-        (left_tokens[i], left_tokens[i + 1]) for i in range(len(left_tokens) - 1)
-    }
-    right_bigrams = {
-        (right_tokens[i], right_tokens[i + 1]) for i in range(len(right_tokens) - 1)
-    }
-    result["identical_bigrams"] = [
-        list(pair) for pair in sorted(left_bigrams & right_bigrams)
-    ]
+    left_bigrams = {(left_tokens[i], left_tokens[i + 1]) for i in range(len(left_tokens) - 1)}
+    right_bigrams = {(right_tokens[i], right_tokens[i + 1]) for i in range(len(right_tokens) - 1)}
+    result["identical_bigrams"] = [list(pair) for pair in sorted(left_bigrams & right_bigrams)]
     return result
 
 
