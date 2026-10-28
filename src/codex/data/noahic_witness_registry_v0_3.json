@@ -1,0 +1,74 @@
+{
+  "schema": "noahic-03/witness-registry-v0.1",
+  "scope": "Edition/witness registry: NO texts bundled and NO original-Hebrew Jubilees 10 claim",
+  "target_pair": [
+    "jubilees_10",
+    "asaf_prologue"
+  ],
+  "witnesses": [
+    {
+      "id": "jubilees_10_geez_eotc",
+      "work_id": "jubilees_10",
+      "language": "gez",
+      "script": "ethiopic",
+      "locus": "Jubilees 10",
+      "witness_type": "printed_edition_digitization",
+      "relationship_to_composition": "ancient_version_in_translation",
+      "coverage": "attested",
+      "ingestion": "not_ingested",
+      "license_status": "cc_by_sa_4_0",
+      "license_note": "Attribution and ShareAlike apply; independently verify source extraction scope, edition, and attribution before copying.",
+      "source_url": "https://biblesrc.org/text/jubilees",
+      "edition": "EOTC printed Ge'ez Jubilees encoded by Beta maṣāḥǝft; not the Hebrew composition's autographic wording",
+      "notes": "A Ge'ez translation that survives for this chapter, not the original ancient Hebrew composition."
+    },
+    {
+      "id": "asaf_prologue_hebrew_muntner",
+      "work_id": "asaf_prologue",
+      "language": "he",
+      "script": "hebrew",
+      "locus": "Sefer Asaf prologue, Noah healing story",
+      "witness_type": "modern_publication_of_medieval_hebrew_text",
+      "relationship_to_composition": "later_hebrew_edition",
+      "coverage": "attested",
+      "ingestion": "not_ingested",
+      "license_status": "rights_review_required",
+      "license_note": "Project Ben-Yehuda labels this 1958 edition published with permission. Do not redistribute text under CODEX MIT license without verifying reuse rights.",
+      "source_url": "https://benyehuda.org/read/53511",
+      "edition": "Z. Muntner, Hebrew introduction to Sefer Asaf ha-Rofe (1958), prints opening of prologue; historical textual edition",
+      "notes": "A Hebrew medieval medical prologue transmitted in later manuscripts, not Noah's own handwriting."
+    },
+    {
+      "id": "jubilees_10_qumran_hebrew_gap",
+      "work_id": "jubilees_10",
+      "language": "he",
+      "script": "hebrew",
+      "locus": "Jubilees 10",
+      "witness_type": "extant_fragment_coverage_survey",
+      "relationship_to_composition": "original_language_fragments_elsewhere",
+      "coverage": "not_attested_in_identified_extant_fragments",
+      "ingestion": "unavailable",
+      "license_status": "not_applicable",
+      "license_note": "Coverage statement, not a license to reproduce photographs/transcriptions.",
+      "source_url": "https://www.deadseascrolls.org.il/explore-the-archive/manuscript/4Q216-1?locale=en",
+      "edition": "Qumran Hebrew witnesses of Jubilees including 4Q216; chapter 10 not identified among catalogued preserved loci checked",
+      "notes": "Do not substitute a modern retroversion, reconstruct lost wording, or claim that chapter 10 exists in 4Q216. This is a provisional coverage finding."
+    },
+    {
+      "id": "jubilees_10_modern_hebrew_translation",
+      "work_id": "jubilees_10",
+      "language": "he",
+      "script": "hebrew",
+      "locus": "Jubilees 10:10",
+      "witness_type": "modern_hebrew_version",
+      "relationship_to_composition": "modern_translation_not_original_witness",
+      "coverage": "attested",
+      "ingestion": "not_ingested",
+      "license_status": "cc_by_sa_verify",
+      "license_note": "Sefaria attributes a Hebrew version to Wikisource, based on a late edition; verify exact license per passage.",
+      "source_url": "https://www.sefaria.org/Book_of_Jubilees.10.10?lang2=en&with=About",
+      "edition": "Sefaria Hebrew version attributed to Wikisource / Rubin edition; not a Qumran witness",
+      "notes": "Hebrew-language wording does not make this an original Hebrew manuscript. Exclude from original-language lexical comparisons."
+    }
+  ]
+}
