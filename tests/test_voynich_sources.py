@@ -174,3 +174,15 @@ def test_source_fields_do_not_accept_malformed_input() -> None:
     corrupted["items"][0]["id"] = "not-a-canvas"
     with pytest.raises(AtlasError, match="HTTPS"):
         atlas_from_manifest(json.dumps(corrupted).encode("utf-8"))
+
+def test_tampered_atlas_is_rejected_before_review() -> None:
+    atlas = atlas_from_manifest(_v3())
+    atlas["canvases"][0]["image_url"] = "https://example.com/unverified.jpg"
+    with pytest.raises(AtlasError, match="integrity"):
+        blank_assignments(atlas, ["f78r"])
+
+
+def test_duplicate_aliases_are_rejected() -> None:
+    atlas = atlas_from_manifest(_v3())
+    with pytest.raises(AtlasError, match="Duplicate requested folio"):
+        blank_assignments(atlas, ["f78r", "78r"])
