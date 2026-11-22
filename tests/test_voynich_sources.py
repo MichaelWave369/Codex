@@ -37,19 +37,25 @@ def _v3() -> bytes:
                     "id": "https://collections.library.yale.edu/canvas/78r",
                     "type": "Canvas",
                     "label": {"en": ["f78r"]},
-                    "items": _painting("https://collections.library.yale.edu/iiif/2/img78/full/full/0/default.jpg"),
+                    "items": _painting(
+                        "https://collections.library.yale.edu/iiif/2/img78/full/full/0/default.jpg"
+                    ),
                 },
                 {
                     "id": "https://collections.library.yale.edu/canvas/foldout",
                     "type": "Canvas",
                     "label": {"none": ["foldout f85v–f86r"]},
-                    "items": _painting("https://collections.library.yale.edu/iiif/2/fold/full/full/0/default.jpg"),
+                    "items": _painting(
+                        "https://collections.library.yale.edu/iiif/2/fold/full/full/0/default.jpg"
+                    ),
                 },
                 {
                     "id": "https://collections.library.yale.edu/canvas/page3",
                     "type": "Canvas",
                     "label": {"none": ["Page 3"]},
-                    "items": _painting("https://collections.library.yale.edu/iiif/2/3/full/full/0/default.jpg"),
+                    "items": _painting(
+                        "https://collections.library.yale.edu/iiif/2/3/full/full/0/default.jpg"
+                    ),
                 },
             ],
         }
