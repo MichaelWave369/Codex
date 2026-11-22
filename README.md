@@ -165,3 +165,19 @@ Private Parallax / PHI369 canon packs, proprietary adapters, unreleased prompts,
 private source atlases, closed-source integrations, EVIE private decks, and
 other non-public PHI369 Labs materials are not included in this license unless
 explicitly published in this repository.
+
+## Voynich symbolic comparison pilot (research branch)
+
+An optional, local-first **VGVE** cross-text adapter compares *human-annotated*
+symbolic operator sequences using adjacency overlap, seeded shuffle controls,
+historical provenance gates, counter-hypotheses, and SHA-256 receipts.
+
+This is a **hypothesis-testing workbench**, **not a Voynich translation**.
+The bundled example is synthetic, not historical evidence.
+
+```bash
+python -m codex.voynich_engine examples/voynich_symbolic_demo.json --out receipt.json
+```
+
+See [the research protocol](docs/VOYNICH_ENGINE.md) for safeguards, limitations,
+and the planned primary-source / blind-annotation work.

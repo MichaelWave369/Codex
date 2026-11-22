@@ -1,0 +1,60 @@
+{
+  "schema_version": "vgve-cross-text/0.1",
+  "hypothesis": "Analyst-specified symbolic transitions may recur across different narratives; example data are entirely synthetic.",
+  "claimed_decipherment": false,
+  "records": [
+    {
+      "id": "illustration-demo",
+      "tradition": "voynich-inspired-demo",
+      "source": {
+        "kind": "synthetic",
+        "title": "Invented diagram, NOT a Voynich folio",
+        "reference": "synthetic:image:01"
+      },
+      "claim_label": "NON-CLAIM",
+      "counter_hypothesis": "The sequence may be a modern diagram convention without ancient significance.",
+      "anchors": [
+        {"operator": "DIFFERENTIATE", "kind": "visual", "location": "panel 1", "evidence": "One ring separates into two"},
+        {"operator": "EMBODY", "kind": "visual", "location": "panel 2", "evidence": "A figure appears within an outline"},
+        {"operator": "EXPERIENCE", "kind": "visual", "location": "panel 3", "evidence": "The figure looks through a window"},
+        {"operator": "RETURN", "kind": "visual", "location": "panel 4", "evidence": "A line curls back to the first ring"}
+      ]
+    },
+    {
+      "id": "parable-demo",
+      "tradition": "fictional-parable",
+      "source": {
+        "kind": "synthetic",
+        "title": "Invented English parable, NOT a translated historical source",
+        "reference": "synthetic:text:02",
+        "text": "The single flame becomes many sparks. A spark enters a lantern. It watches the road. The spark goes home."
+      },
+      "claim_label": "NON-CLAIM",
+      "counter_hypothesis": "Both synthetic examples were deliberately constructed to resemble each other.",
+      "anchors": [
+        {"operator": "DIFFERENTIATE", "kind": "text", "location": "sentence 1", "evidence": "The single flame becomes many sparks."},
+        {"operator": "EMBODY", "kind": "text", "location": "sentence 2", "evidence": "A spark enters a lantern."},
+        {"operator": "EXPERIENCE", "kind": "text", "location": "sentence 3", "evidence": "It watches the road."},
+        {"operator": "RETURN", "kind": "text", "location": "sentence 4", "evidence": "The spark goes home."}
+      ]
+    },
+    {
+      "id": "negative-control",
+      "tradition": "fictional-control",
+      "source": {
+        "kind": "synthetic",
+        "title": "Invented control sequence",
+        "reference": "synthetic:text:03",
+        "text": "A wall is repaired. The door is closed. The bell rings. The wall is repaired again."
+      },
+      "claim_label": "NON-CLAIM",
+      "counter_hypothesis": "Any apparent match may result from broad, subjective operator definitions.",
+      "anchors": [
+        {"operator": "BIND", "kind": "text", "location": "sentence 1", "evidence": "A wall is repaired."},
+        {"operator": "DISSOLVE", "kind": "text", "location": "sentence 2", "evidence": "The door is closed."},
+        {"operator": "CYCLE", "kind": "text", "location": "sentence 3", "evidence": "The bell rings."},
+        {"operator": "BIND", "kind": "text", "location": "sentence 4", "evidence": "The wall is repaired again."}
+      ]
+    }
+  ]
+}
