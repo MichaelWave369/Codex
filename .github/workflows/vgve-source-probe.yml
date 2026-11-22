@@ -62,6 +62,28 @@ jobs:
           else
             echo "BRIDGE: BLOCKED_BY_MISSING_UPSTREAM" >> source-receipts/status.txt
           fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          directory = Path("source-receipts")
+          summary = {"note": "GitHub-hosted upstream provenance probe; no decipherment"}
+          for filename, key, fields in (
+              ("zl3b_index.json", "transcription", ("page_count", "locus_count", "source_sha256")),
+              ("yale_atlas.json", "manuscript", ("canvas_count", "manifest_sha256")),
+              ("atlas_crosswalk.json", "crosswalk", ("mapping_counts",)),
+          ):
+              file = directory / filename
+              if file.exists():
+                  payload = json.loads(file.read_text(encoding="utf-8"))
+                  summary[key] = {field: payload.get(field) for field in fields}
+              else:
+                  summary[key] = {"status": "not_available"}
+          (directory / "summary.json").write_text(
+              json.dumps(summary, sort_keys=True, indent=2) + "\n", encoding="utf-8"
+          )
+          print(json.dumps(summary, sort_keys=True, indent=2))
+          PY
           rm -f zl3b.ivtff yale-manifest.json
           cat source-receipts/status.txt
       - name: Upload metadata-only reproducibility receipts
