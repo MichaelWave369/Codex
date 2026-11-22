@@ -191,3 +191,14 @@ Voynich translation or preloaded cosmological interpretation.
 
 See [the review protocol](docs/VOYNICH_REVIEW.md) for the complete CLI workflow,
 codebook, uncertainty categories, and negative-control requirements.
+
+### Phase 4: real IVTFF transliteration and source crosswalk
+
+The new `codex.voynich_ivtff` module indexes the ZL 3b EVA transliteration
+with strict IVTFF header and line validation, SHA-256 source checksums, and a
+conservative bridge to verified Yale IIIF folio labels. It **does not translate
+the manuscript or infer symbolic meaning**.
+
+A GitHub Actions source probe can fetch live upstream data and emit
+metadata-only artifacts without installing anything locally. Read the
+[Phase 4 protocol](docs/VOYNICH_IVTFF.md) before interpreting results.
