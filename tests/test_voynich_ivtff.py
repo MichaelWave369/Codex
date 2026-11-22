@@ -92,9 +92,7 @@ def test_rejects_invalid_format_and_empty_source() -> None:
 
 
 def test_rejects_duplicate_locus_ids_and_orphans() -> None:
-    duplicate = RAW.replace(
-        b"<f1r.2,+P0>  [a:o].qux", b"<f1r.1,+P0>  [a:o].qux"
-    )
+    duplicate = RAW.replace(b"<f1r.2,+P0>  [a:o].qux", b"<f1r.1,+P0>  [a:o].qux")
     with pytest.raises(TranscriptionError, match="Duplicate locus"):
         index_ivtff(duplicate)
     orphan = b"#=IVTFF Eva- 2.0 M 5\n<f1r.1,@P0> words\n"
