@@ -146,9 +146,7 @@ def compare(packet: dict[str, Any]) -> dict[str, Any]:
                 "left_id": left["id"],
                 "right_id": right["id"],
                 "transition_jaccard": round(observed, 6),
-                "shuffle_p_exploratory": round(
-                    _permutation_p(left_ops, right_ops, observed), 6
-                ),
+                "shuffle_p_exploratory": round(_permutation_p(left_ops, right_ops, observed), 6),
                 "shared_transitions": [
                     list(pair) for pair in sorted(_transitions(left_ops) & _transitions(right_ops))
                 ],
