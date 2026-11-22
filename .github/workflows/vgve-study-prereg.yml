@@ -1,0 +1,81 @@
+name: VGVE preregistered pilot preparation
+
+on:
+  pull_request:
+    paths:
+      - "src/codex/voynich_study.py"
+      - "tests/test_voynich_study.py"
+      - ".github/workflows/vgve-study-prereg.yml"
+      - "docs/VOYNICH_SOURCE_LOCK.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch exact upstream bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 2 --connect-timeout 10 --max-time 60 \
+            https://www.voynich.nu/data/ZL3b-n.txt -o zl3b.ivtff
+          curl -fsSL --retry 2 --connect-timeout 10 --max-time 60 \
+            https://collections.library.yale.edu/manifests/2002046 -o yale-manifest.json
+      - name: Rebuild source-locked indices and preregister pilot
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          set -euo pipefail
+          mkdir -p study-receipts
+          EXPECTED="$(python -c 'import json; print(json.load(open("docs/VOYNICH_SOURCE_LOCK.json"))["zl3b"]["source_sha256"])')"
+          python -m codex.voynich_ivtff index zl3b.ivtff \
+            --sha256 "$EXPECTED" --out study-receipts/zl3b_index.json
+          python -m codex.voynich_sources index yale-manifest.json \
+            --out study-receipts/yale_atlas.json
+          python -m codex.voynich_ivtff bridge \
+            study-receipts/zl3b_index.json study-receipts/yale_atlas.json \
+            --out study-receipts/atlas_crosswalk.json
+          python -m codex.voynich_study prepare \
+            study-receipts/zl3b_index.json study-receipts/yale_atlas.json \
+            study-receipts/atlas_crosswalk.json docs/VOYNICH_SOURCE_LOCK.json \
+            --sample-size 32 --out-plan study-receipts/pilot_plan.json \
+            --out-protocol study-receipts/neutral_grid_protocol.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          folder = Path("study-receipts")
+          plan = json.loads((folder / "pilot_plan.json").read_text())
+          result = {
+              "study_id": plan["study_id"],
+              "plan_receipt_sha256": plan["receipt_sha256"],
+              "source_manifest_sha256": plan["source_manifest_sha256"],
+              "source_ivtff_sha256": plan["source_ivtff_sha256"],
+              "eligible_folios": plan["eligible_folios"],
+              "sample_size": plan["sample_size"],
+              "holdout_size": plan["holdout_size"],
+              "experimental_outcome": "NOT_AVAILABLE; HUMAN REVIEWS NOT COLLECTED",
+          }
+          (folder / "pilot_summary.json").write_text(
+              json.dumps(result, indent=2, sort_keys=True) + "\n"
+          )
+          print(json.dumps(result, indent=2, sort_keys=True))
+          PY
+          rm -f zl3b.ivtff yale-manifest.json
+      - name: Upload metadata-only preregistration artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vgve-preregistered-pilot
+          path: study-receipts/
+          retention-days: 30
+          if-no-files-found: warn
