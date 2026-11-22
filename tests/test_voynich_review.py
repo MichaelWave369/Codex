@@ -11,6 +11,7 @@ from codex.voynich_review import (
     blank_review,
     compare_reviews,
     create_protocol,
+    seal_review,
 )
 from codex.voynich_sources import MANIFEST_URL, atlas_from_manifest
 
@@ -186,3 +187,23 @@ def test_rejects_invalid_grid(rows: int, cols: int) -> None:
 def test_rejects_nonexistent_folio() -> None:
     with pytest.raises(ReviewError, match="verifiable"):
         create_protocol(_atlas(), ["f79r"])
+
+
+def test_seal_review_accepts_complete_edits_and_rejects_blank() -> None:
+    protocol = _protocol()
+    blank = blank_review(protocol, "a")
+    with pytest.raises(ReviewError, match="independent"):
+        seal_review(protocol, blank)
+    complete = _filled(protocol, "a")
+    complete["receipt_sha256"] = "stale"
+    sealed = seal_review(protocol, complete)
+    assert len(sealed["receipt_sha256"]) == 64
+    assert sealed == _filled(protocol, "a")
+
+
+def test_non_string_operator_fails_without_type_error() -> None:
+    protocol = _protocol()
+    complete = _filled(protocol, "a")
+    complete["annotations"][0]["operator"] = ["BIND"]
+    with pytest.raises(ReviewError, match="invalid operator"):
+        seal_review(protocol, complete)
