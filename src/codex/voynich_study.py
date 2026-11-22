@@ -14,19 +14,17 @@ import random
 from pathlib import Path
 from typing import Any
 
-from codex.voynich_ivtff import (
-    BRIDGE_SCHEMA,
-    SCHEMA as INDEX_SCHEMA,
-    _verify as verify_source,
-)
+from codex.voynich_ivtff import BRIDGE_SCHEMA
+from codex.voynich_ivtff import SCHEMA as INDEX_SCHEMA
+from codex.voynich_ivtff import _verify as verify_source
 from codex.voynich_review import (
     PROTOCOL_SCHEMA,
     ReviewError,
     _checked_annotations,
-    _verify as verify_review,
     compare_reviews,
     create_protocol,
 )
+from codex.voynich_review import _verify as verify_review
 from codex.voynich_sources import SCHEMA as ATLAS_SCHEMA
 
 PLAN_SCHEMA = "vgve-preregistered-pilot/0.1"
