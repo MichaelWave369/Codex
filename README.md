@@ -181,3 +181,13 @@ python -m codex.voynich_engine examples/voynich_symbolic_demo.json --out receipt
 
 See [the research protocol](docs/VOYNICH_ENGINE.md) for safeguards, limitations,
 and the planned primary-source / blind-annotation work.
+
+### Phase 3: hypothesis-blind region review
+
+The optional `codex.voynich_review` module extends VGVE with **fixed spatial
+region protocols, two independent observer sheets, protocol-bound review
+sealing, and Cohen's kappa agreement reports**. Its blank sheets contain no
+Voynich translation or preloaded cosmological interpretation.
+
+See [the review protocol](docs/VOYNICH_REVIEW.md) for the complete CLI workflow,
+codebook, uncertainty categories, and negative-control requirements.
