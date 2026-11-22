@@ -134,8 +134,11 @@ def atlas_from_manifest(raw: bytes) -> dict[str, Any]:
                 "folio_key": candidates[0] if len(candidates) == 1 else None,
                 "folio_candidates": candidates,
                 "label_status": (
-                    "unambiguous" if len(candidates) == 1 else "ambiguous"
-                    if candidates else "unresolved"
+                    "unambiguous"
+                    if len(candidates) == 1
+                    else "ambiguous"
+                    if candidates
+                    else "unresolved"
                 ),
                 "image_url": _canvas_image(canvas, version=version),
             }
