@@ -237,15 +237,26 @@ def evaluate(
     _verify(plan, PLAN_SCHEMA)
     try:
         verify_review(protocol, PROTOCOL_SCHEMA)
+    except ReviewError as error:
+        raise StudyError(f"Invalid review protocol: {error}") from error
+    if plan["review_protocol_receipt_sha256"] != protocol["receipt_sha256"]:
+        raise StudyError("Review protocol differs from preregistered plan")
+    if plan["atlas_receipt_sha256"] != protocol["atlas_receipt_sha256"]:
+        raise StudyError("Source atlas differs from preregistered plan")
+    if (
+        plan["seed"] != SEED
+        or plan["permutations"] != SHUFFLES
+        or plan["alpha_one_sided"] != ALPHA
+        or plan["grid"] != {"rows": 2, "cols": 2}
+        or plan["primary_metric"] != "Spearman rank correlation on HOLDOUT only"
+    ):
+        raise StudyError("Frozen statistical protocol differs from implemented method")
+    try:
         agreement = compare_reviews(protocol, first, second)
         a = _checked_annotations(protocol, first)
         b = _checked_annotations(protocol, second)
     except ReviewError as error:
         raise StudyError(f"Invalid independent review: {error}") from error
-    if plan["review_protocol_receipt_sha256"] != protocol["receipt_sha256"]:
-        raise StudyError("Review protocol differs from preregistered plan")
-    if plan["atlas_receipt_sha256"] != protocol["atlas_receipt_sha256"]:
-        raise StudyError("Source atlas differs from preregistered plan")
 
     expected = {row["folio_id"] for row in plan["records"]}
     grouped: dict[str, list[str]] = {}
