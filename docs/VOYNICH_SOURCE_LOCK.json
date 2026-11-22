@@ -1,0 +1,36 @@
+{
+  "schema_version": "vgve-source-lock/0.1",
+  "recorded_utc_date": "2026-11-22",
+  "observed_via": "GitHub Actions metadata-only live-source probe",
+  "workflow_run_url": "https://github.com/MichaelWave369/Codex/actions/runs/45073766116",
+  "yale": {
+    "institution": "Yale University Beinecke Rare Book & Manuscript Library",
+    "catalog_url": "https://collections.library.yale.edu/catalog/2002046",
+    "manifest_url": "https://collections.library.yale.edu/manifests/2002046",
+    "manifest_sha256": "317d58fd9ea90392a83d9858a91eada3d0b41416a3c835857dc0154bd123a309",
+    "iiif_canvas_count": 213
+  },
+  "zl3b": {
+    "attribution": "Zandbergen-Landini transcription",
+    "url": "https://www.voynich.nu/data/ZL3b-n.txt",
+    "format": "IVTFF 2.0",
+    "alphabet": "Eva-",
+    "edition": "3b",
+    "edition_date": "2025-05-13",
+    "source_sha256": "bf5b6d4ac1e3a51b1847a9c388318d609020441ccd56984c901c32b09beccafc",
+    "page_section_count": 227,
+    "locus_record_count": 5385
+  },
+  "literal_crosswalk": {
+    "exact_label_matches": 178,
+    "multiple_explicit_canvas_matches": 0,
+    "unmapped_transcription_sections": 49
+  },
+  "boundaries": [
+    "No semantic or linguistic decipherment is claimed.",
+    "Transcription page sections and IIIF image canvases are different units.",
+    "Exact label matches do not establish manuscript physical-page alignment.",
+    "The source SHA-256 lock verifies byte identity, not historical correctness.",
+    "Unmapped sections must not be silently normalized."
+  ]
+}

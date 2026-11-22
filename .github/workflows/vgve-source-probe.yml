@@ -1,0 +1,139 @@
+name: VGVE source provenance probe
+
+on:
+  pull_request:
+    paths:
+      - "src/codex/voynich_ivtff.py"
+      - "src/codex/voynich_sources.py"
+      - ".github/workflows/vgve-source-probe.yml"
+      - "docs/VOYNICH_SOURCE_LOCK.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Retrieve live primary sources, without storing source files
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          mkdir -p source-receipts
+          echo "VGVE upstream network and parser probe" > source-receipts/status.txt
+          if curl -fsSL --retry 2 --connect-timeout 10 --max-time 50 \
+            https://www.voynich.nu/data/ZL3b-n.txt -o zl3b.ivtff; then
+            if python -m codex.voynich_ivtff index zl3b.ivtff \
+              --out source-receipts/zl3b_index.json; then
+              echo "ZL3b: FETCHED_AND_INDEXED" >> source-receipts/status.txt
+            else
+              echo "ZL3b: FETCHED_BUT_PARSER_REJECTED" >> source-receipts/status.txt
+            fi
+          else
+            echo "ZL3b: UPSTREAM_UNAVAILABLE" >> source-receipts/status.txt
+          fi
+          if curl -fsSL --retry 2 --connect-timeout 10 --max-time 50 \
+            https://collections.library.yale.edu/manifests/2002046 \
+            -o yale-manifest.json; then
+            if python -m codex.voynich_sources index yale-manifest.json \
+              --out source-receipts/yale_atlas.json; then
+              echo "YALE: FETCHED_AND_INDEXED" >> source-receipts/status.txt
+            else
+              echo "YALE: FETCHED_BUT_PARSER_REJECTED" >> source-receipts/status.txt
+            fi
+          else
+            echo "YALE: UPSTREAM_UNAVAILABLE" >> source-receipts/status.txt
+          fi
+          if [ -f source-receipts/yale_atlas.json ] && \
+            [ -f source-receipts/zl3b_index.json ]; then
+            if python -m codex.voynich_ivtff bridge \
+              source-receipts/zl3b_index.json source-receipts/yale_atlas.json \
+              --out source-receipts/atlas_crosswalk.json; then
+              echo "BRIDGE: EXACT_LABEL_CROSSWALK_CREATED" >> source-receipts/status.txt
+            else
+              echo "BRIDGE: CANNOT_VERIFY" >> source-receipts/status.txt
+            fi
+          else
+            echo "BRIDGE: BLOCKED_BY_MISSING_UPSTREAM" >> source-receipts/status.txt
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          directory = Path("source-receipts")
+          summary = {"note": "GitHub-hosted upstream provenance probe; no decipherment"}
+          for filename, key, fields in (
+              ("zl3b_index.json", "transcription", ("page_count", "locus_count", "source_sha256")),
+              ("yale_atlas.json", "manuscript", ("canvas_count", "manifest_sha256")),
+              ("atlas_crosswalk.json", "crosswalk", ("mapping_counts",)),
+          ):
+              file = directory / filename
+              if file.exists():
+                  payload = json.loads(file.read_text(encoding="utf-8"))
+                  summary[key] = {field: payload.get(field) for field in fields}
+              else:
+                  summary[key] = {"status": "not_available"}
+          (directory / "summary.json").write_text(
+              json.dumps(summary, sort_keys=True, indent=2) + "\n", encoding="utf-8"
+          )
+          print(json.dumps(summary, sort_keys=True, indent=2))
+          PY
+          rm -f zl3b.ivtff yale-manifest.json
+          cat source-receipts/status.txt
+      - name: Verify source bytes and structural counts against pinned baseline
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          observed = json.loads(Path("source-receipts/summary.json").read_text())
+          baseline = json.loads(Path("docs/VOYNICH_SOURCE_LOCK.json").read_text())
+          comparisons = (
+              ("Yale manifest SHA-256", observed["manuscript"].get("manifest_sha256"),
+               baseline["yale"]["manifest_sha256"]),
+              ("Yale canvas count", observed["manuscript"].get("canvas_count"),
+               baseline["yale"]["iiif_canvas_count"]),
+              ("ZL 3b SHA-256", observed["transcription"].get("source_sha256"),
+               baseline["zl3b"]["source_sha256"]),
+              ("ZL 3b page count", observed["transcription"].get("page_count"),
+               baseline["zl3b"]["page_section_count"]),
+              ("ZL 3b locus count", observed["transcription"].get("locus_count"),
+               baseline["zl3b"]["locus_record_count"]),
+              ("Crosswalk counts", observed["crosswalk"].get("mapping_counts"),
+               {
+                   "EXACT_LABEL_MATCH": baseline["literal_crosswalk"]["exact_label_matches"],
+                   "MULTIPLE_EXPLICIT_CANVASES": baseline["literal_crosswalk"][
+                       "multiple_explicit_canvas_matches"
+                   ],
+                   "UNMAPPED": baseline["literal_crosswalk"][
+                       "unmapped_transcription_sections"
+                   ],
+               }),
+          )
+          failures = []
+          for label, actual, expected in comparisons:
+              if actual != expected:
+                  failures.append(f"{label}: got {actual!r}, expected {expected!r}")
+          if failures:
+              print("SOURCE PROVENANCE LOCK FAILED; human review required")
+              for message in failures:
+                  print(message)
+              raise SystemExit(1)
+          print("SOURCE PROVENANCE LOCK PASSED; matched both downloaded source hashes")
+          PY
+      - name: Upload metadata-only reproducibility receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vgve-provenance-receipts
+          path: source-receipts/
+          retention-days: 7
+          if-no-files-found: error
