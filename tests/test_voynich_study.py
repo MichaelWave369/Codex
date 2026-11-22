@@ -172,3 +172,23 @@ def test_equal_source_locus_counts_are_valid_but_undefined_correlation() -> None
     first, second = _reviews(protocol, uniform=True)
     verdict = evaluate(plan, protocol, first, second)
     assert verdict["verdict"] == "INDETERMINATE"
+
+
+def test_resealed_plan_still_fails_frozen_preregistration_lock() -> None:
+    plan, protocol = make_plan(*_study_sources(), sample_size=12)
+    first, second = _reviews(protocol)
+    original_sha = plan["receipt_sha256"]
+    replacement = copy.deepcopy(plan)
+    replacement["hypothesis"] = "After-the-fact alternative hypothesis"
+    unsigned = {key: value for key, value in replacement.items() if key != "receipt_sha256"}
+    replacement["receipt_sha256"] = hashlib.sha256(
+        json.dumps(unsigned, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+    ).hexdigest()
+    with pytest.raises(StudyError, match="preregistered pilot lock"):
+        evaluate(
+            replacement,
+            protocol,
+            first,
+            second,
+            expected_plan_sha256=original_sha,
+        )
