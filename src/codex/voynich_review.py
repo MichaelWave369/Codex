@@ -28,9 +28,9 @@ class ReviewError(ValueError):
 
 
 def _canonical(value: dict[str, Any]) -> bytes:
-    return json.dumps(
-        value, sort_keys=True, ensure_ascii=False, separators=(",", ":")
-    ).encode("utf-8")
+    return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode(
+        "utf-8"
+    )
 
 
 def _signed(value: dict[str, Any]) -> dict[str, Any]:
@@ -285,17 +285,13 @@ def main() -> None:
 
     try:
         if args.command == "protocol":
-            result = create_protocol(
-                _read(args.atlas), args.folio, rows=args.rows, cols=args.cols
-            )
+            result = create_protocol(_read(args.atlas), args.folio, rows=args.rows, cols=args.cols)
         elif args.command == "blank":
             result = blank_review(_read(args.protocol), args.reviewer)
         elif args.command == "seal":
             result = seal_review(_read(args.protocol), _read(args.edited_review))
         else:
-            result = compare_reviews(
-                _read(args.protocol), _read(args.first), _read(args.second)
-            )
+            result = compare_reviews(_read(args.protocol), _read(args.first), _read(args.second))
     except (ReviewError, AtlasError, ValueError) as error:
         parser.error(str(error))
     _write(args.out, result)
