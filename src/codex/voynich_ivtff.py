@@ -81,9 +81,7 @@ def index_ivtff(raw: bytes, expected_sha256: str | None = None) -> dict[str, Any
             current = {
                 "folio_id": key,
                 "source_line": line_number,
-                "page_variables_raw_sha256": hashlib.sha256(
-                    trailer.encode("utf-8")
-                ).hexdigest(),
+                "page_variables_raw_sha256": hashlib.sha256(trailer.encode("utf-8")).hexdigest(),
                 "loci": [],
             }
             pages.append(current)
