@@ -87,3 +87,18 @@ literal textual marker distributions) with independently scored image-region
 annotations. Pre-register the statistical comparison before seeing results.
 Negative controls must include unrelated manuscripts and simple page-layout
 features. This remains **exploratory** unless a held-out study succeeds.
+
+
+## Verified live baseline (November 22, 2026)
+
+A GitHub-hosted probe successfully retrieved and parsed **both original
+upstreams**, and matched their SHA-256 digests to separately documented source
+snapshots. The recorded totals are 213 Yale IIIF canvases, 227 ZL 3b page
+sections, and 5,385 textual loci. The conservative literal-label bridge found
+178 exact matches and left 49 transcription sections unmapped.
+
+The raw source bytes are **not committed**. The machine-readable
+[`VOYNICH_SOURCE_LOCK.json`](VOYNICH_SOURCE_LOCK.json) pins these digests,
+counts, and the GitHub Actions run that first verified them. The workflow now
+fails its separate provenance check when upstream contents or parser counts
+change. That is a *source review alert*, not evidence of a decipherment.
