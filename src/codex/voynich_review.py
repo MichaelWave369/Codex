@@ -156,7 +156,7 @@ def _checked_annotations(
         if region_id in actual:
             raise ReviewError(f"Duplicate review region: {region_id}")
         operator = annotation.get("operator")
-        if operator not in ALLOWED_LABELS:
+        if not isinstance(operator, str) or operator not in ALLOWED_LABELS:
             raise ReviewError(f"Missing or invalid operator for {region_id}")
         evidence = annotation.get("evidence")
         counter = annotation.get("counter_hypothesis")
@@ -170,6 +170,17 @@ def _checked_annotations(
     if set(actual) != expected:
         raise ReviewError("Review coverage does not equal the complete preselected region set")
     return actual
+
+
+def seal_review(protocol: dict[str, Any], submission: dict[str, Any]) -> dict[str, Any]:
+    """Check a completed edited review against its protocol and update its checksum."""
+    _verify(protocol, PROTOCOL_SCHEMA)
+    if not isinstance(submission, dict):
+        raise ReviewError("Review must be a JSON object")
+    candidate = {key: value for key, value in submission.items() if key != "receipt_sha256"}
+    _signed(candidate)
+    _checked_annotations(protocol, candidate)
+    return candidate
 
 
 def compare_reviews(
@@ -261,6 +272,10 @@ def main() -> None:
     sheet.add_argument("protocol", type=Path)
     sheet.add_argument("--reviewer", required=True)
     sheet.add_argument("--out", type=Path, required=True)
+    seal = commands.add_parser("seal")
+    seal.add_argument("protocol", type=Path)
+    seal.add_argument("edited_review", type=Path)
+    seal.add_argument("--out", type=Path, required=True)
     score = commands.add_parser("score")
     score.add_argument("protocol", type=Path)
     score.add_argument("first", type=Path)
@@ -275,6 +290,8 @@ def main() -> None:
             )
         elif args.command == "blank":
             result = blank_review(_read(args.protocol), args.reviewer)
+        elif args.command == "seal":
+            result = seal_review(_read(args.protocol), _read(args.edited_review))
         else:
             result = compare_reviews(
                 _read(args.protocol), _read(args.first), _read(args.second)
