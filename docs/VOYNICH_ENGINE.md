@@ -88,3 +88,14 @@ organize observations and give hypotheses a fair chance to **fail**.
 No medical, herbal, fertility, or psychoactive preparation instructions belong
 in this research module. This experimental adapter leaves the established
 CODEX pipeline and interfaces unchanged.
+
+
+## Phase 2 source atlas
+
+The optional `codex.voynich_sources` module indexes **Yale's official IIIF
+manuscript manifest** into a content-hashed atlas and makes blank, hypothesis-blind
+folio observation sheets. It never auto-assigns symbolic interpretations or
+pretends transliteration is a translation.
+
+See [VOYNICH_SOURCES.md](VOYNICH_SOURCES.md) for the precise offline commands,
+provenance rules, limits on folio labeling, and reviewer protocol.
