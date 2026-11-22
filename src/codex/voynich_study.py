@@ -85,9 +85,7 @@ def _validate_lock(
     ]
     expected_counts = {
         "EXACT_LABEL_MATCH": lock["literal_crosswalk"]["exact_label_matches"],
-        "MULTIPLE_EXPLICIT_CANVASES": lock["literal_crosswalk"][
-            "multiple_explicit_canvas_matches"
-        ],
+        "MULTIPLE_EXPLICIT_CANVASES": lock["literal_crosswalk"]["multiple_explicit_canvas_matches"],
         "UNMAPPED": lock["literal_crosswalk"]["unmapped_transcription_sections"],
     }
     if bridge["mapping_counts"] != expected_counts or any(a != b for a, b in requirements):
@@ -151,9 +149,7 @@ def make_plan(
         for index_in_sample, (key, count) in enumerate(selection)
     ]
     try:
-        protocol = create_protocol(
-            atlas, [row["folio_id"] for row in records], rows=2, cols=2
-        )
+        protocol = create_protocol(atlas, [row["folio_id"] for row in records], rows=2, cols=2)
     except ReviewError as error:
         raise StudyError(f"Could not lock review grid: {error}") from error
     plan = {
