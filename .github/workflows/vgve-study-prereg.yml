@@ -7,6 +7,7 @@ on:
       - "tests/test_voynich_study.py"
       - ".github/workflows/vgve-study-prereg.yml"
       - "docs/VOYNICH_SOURCE_LOCK.json"
+      - "docs/VOYNICH_PILOT_LOCK.json"
   workflow_dispatch:
 
 permissions:
@@ -68,6 +69,16 @@ jobs:
           (folder / "pilot_summary.json").write_text(
               json.dumps(result, indent=2, sort_keys=True) + "\n"
           )
+          locked = json.loads(Path("docs/VOYNICH_PILOT_LOCK.json").read_text())
+          if plan["receipt_sha256"] != locked["preregistered_plan_receipt_sha256"]:
+              raise SystemExit("Frozen VGVE study plan drifted; human review required")
+          if (
+              plan["sample_size"] != locked["selected_folios"]
+              or plan["holdout_size"] != locked["heldout_folios"]
+              or plan["eligible_folios"] != locked["eligible_folios"]
+          ):
+              raise SystemExit("Frozen VGVE sample sizes drifted; human review required")
+          print("FROZEN PILOT PLAN LOCK VERIFIED")
           print(json.dumps(result, indent=2, sort_keys=True))
           PY
           rm -f zl3b.ivtff yale-manifest.json
