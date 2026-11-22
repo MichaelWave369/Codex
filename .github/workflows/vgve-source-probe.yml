@@ -1,0 +1,73 @@
+name: VGVE source provenance probe
+
+on:
+  pull_request:
+    paths:
+      - "src/codex/voynich_ivtff.py"
+      - "src/codex/voynich_sources.py"
+      - ".github/workflows/vgve-source-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Retrieve live primary sources, without storing source files
+        shell: bash
+        env:
+          PYTHONPATH: src
+        run: |
+          mkdir -p source-receipts
+          echo "VGVE upstream network and parser probe" > source-receipts/status.txt
+          if curl -fsSL --retry 2 --connect-timeout 10 --max-time 50 \
+            https://www.voynich.nu/data/ZL3b-n.txt -o zl3b.ivtff; then
+            if python -m codex.voynich_ivtff index zl3b.ivtff \
+              --out source-receipts/zl3b_index.json; then
+              echo "ZL3b: FETCHED_AND_INDEXED" >> source-receipts/status.txt
+            else
+              echo "ZL3b: FETCHED_BUT_PARSER_REJECTED" >> source-receipts/status.txt
+            fi
+          else
+            echo "ZL3b: UPSTREAM_UNAVAILABLE" >> source-receipts/status.txt
+          fi
+          if curl -fsSL --retry 2 --connect-timeout 10 --max-time 50 \
+            https://collections.library.yale.edu/manifests/2002046 \
+            -o yale-manifest.json; then
+            if python -m codex.voynich_sources index yale-manifest.json \
+              --out source-receipts/yale_atlas.json; then
+              echo "YALE: FETCHED_AND_INDEXED" >> source-receipts/status.txt
+            else
+              echo "YALE: FETCHED_BUT_PARSER_REJECTED" >> source-receipts/status.txt
+            fi
+          else
+            echo "YALE: UPSTREAM_UNAVAILABLE" >> source-receipts/status.txt
+          fi
+          if [ -f source-receipts/yale_atlas.json ] && \
+            [ -f source-receipts/zl3b_index.json ]; then
+            if python -m codex.voynich_ivtff bridge \
+              source-receipts/zl3b_index.json source-receipts/yale_atlas.json \
+              --out source-receipts/atlas_crosswalk.json; then
+              echo "BRIDGE: EXACT_LABEL_CROSSWALK_CREATED" >> source-receipts/status.txt
+            else
+              echo "BRIDGE: CANNOT_VERIFY" >> source-receipts/status.txt
+            fi
+          else
+            echo "BRIDGE: BLOCKED_BY_MISSING_UPSTREAM" >> source-receipts/status.txt
+          fi
+          rm -f zl3b.ivtff yale-manifest.json
+          cat source-receipts/status.txt
+      - name: Upload metadata-only reproducibility receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vgve-provenance-receipts
+          path: source-receipts/
+          retention-days: 7
+          if-no-files-found: error
