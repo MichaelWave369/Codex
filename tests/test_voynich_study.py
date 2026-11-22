@@ -40,9 +40,7 @@ def _study_sources(count: int = FOLIOS) -> tuple[dict, dict, dict, dict]:
         )
     raw = ("\n".join(lines) + "\n").encode("utf-8")
     index = index_ivtff(raw)
-    atlas = atlas_from_manifest(
-        json.dumps({"id": MANIFEST_URL, "items": canvases}).encode("utf-8")
-    )
+    atlas = atlas_from_manifest(json.dumps({"id": MANIFEST_URL, "items": canvases}).encode("utf-8"))
     bridge = bridge_atlas(index, atlas)
     lock = {
         "schema_version": "vgve-source-lock/0.1",
@@ -69,13 +67,13 @@ def _reviews(protocol: dict, *, uniform: bool = False) -> tuple[dict, dict]:
     for reviewer in ("reviewer-a", "reviewer-b"):
         sheet = blank_review(protocol, reviewer)
         for cell in sheet["annotations"]:
-            cell["operator"] = "NO_PATTERN" if uniform else (
-                "FLOW" if cell["region_id"].endswith("c1") else "NO_PATTERN"
+            cell["operator"] = (
+                "NO_PATTERN"
+                if uniform
+                else ("FLOW" if cell["region_id"].endswith("c1") else "NO_PATTERN")
             )
             cell["evidence"] = "Made-up example grid cell, no source observation"
-            cell["counter_hypothesis"] = (
-                "Simple decoration" if cell["operator"] == "FLOW" else ""
-            )
+            cell["counter_hypothesis"] = "Simple decoration" if cell["operator"] == "FLOW" else ""
         sheet["blinding_asserted"] = True
         sheet["status"] = "COMPLETE"
         result.append(seal_review(protocol, sheet))
