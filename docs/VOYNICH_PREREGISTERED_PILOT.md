@@ -75,10 +75,12 @@ GitHub run's receipt SHA and commit SHA as the frozen preregistration record.
 ```bash
 python -m codex.voynich_study score pilot_plan.json \
   neutral_grid_protocol.json reviewer_a_sealed.json \
-  reviewer_b_sealed.json --out pilot_result.json
+  reviewer_b_sealed.json --pilot-lock docs/VOYNICH_PILOT_LOCK.json \
+  --out pilot_result.json
 ```
 
-It checks source/protocol hashes, reviewer coverage and independence assertions.
+It checks the frozen plan SHA from the repository lock, source/protocol hashes,
+reviewer coverage and independence assertions.
 If the documents are incomplete, it **blocks evaluation**. It reports
 Spearman rho, permutation p-value, the reviewer agreement checksum and Cohen's
 kappa, and an explicit verdict. "PILOT_POSITIVE_ASSOCIATION" is a statistical
