@@ -99,3 +99,16 @@ workflow is the first run that can build the plan on verified real metadata;
 it does not and must not generate fake observer input.
 
 **Evidence first. Patterns second. Interpretations last.**
+
+
+## Frozen first live preregistration
+
+The first successful GitHub-hosted source run recorded 178 strictly eligible
+folios, selected 32 and reserved 8 as the untouched holdout. Its plan receipt
+is pinned in [`VOYNICH_PILOT_LOCK.json`](VOYNICH_PILOT_LOCK.json). This lock
+was committed before collecting visual annotations. GitHub Actions now checks
+that the complete plan receipt, cohort size and holdout size are identical
+to that frozen record on subsequent runs.
+
+A source-locked planning artifact is **not** a scored experiment. There is no
+positive or negative semantic finding until independent reviews are collected.
