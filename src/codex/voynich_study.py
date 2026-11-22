@@ -226,9 +226,13 @@ def evaluate(
     protocol: dict[str, Any],
     first: dict[str, Any],
     second: dict[str, Any],
+    *,
+    expected_plan_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Evaluate a frozen held-out hypothesis only after two complete independent reviews."""
     _verify(plan, PLAN_SCHEMA)
+    if expected_plan_sha256 is not None and plan["receipt_sha256"] != expected_plan_sha256:
+        raise StudyError("Study plan differs from preregistered pilot lock")
     try:
         verify_review(protocol, PROTOCOL_SCHEMA)
     except ReviewError as error:
@@ -352,6 +356,7 @@ def main() -> None:
     score = actions.add_parser("score")
     for name in ("plan", "protocol", "first", "second"):
         score.add_argument(name, type=Path)
+    score.add_argument("--pilot-lock", type=Path, required=True)
     score.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -368,11 +373,15 @@ def main() -> None:
             print(f"Prepared {len(plan['records'])} folios, holdout={plan['holdout_size']}")
             print(f"PLAN SHA256: {plan['receipt_sha256']}")
         else:
+            pilot_lock = _load(args.pilot_lock)
+            if pilot_lock.get("schema_version") != "vgve-pilot-lock/0.1":
+                raise StudyError("Missing validated preregistration lock")
             report = evaluate(
                 _load(args.plan),
                 _load(args.protocol),
                 _load(args.first),
                 _load(args.second),
+                expected_plan_sha256=pilot_lock["preregistered_plan_receipt_sha256"],
             )
             _write(args.out, report)
             print(f"Primary verdict: {report['verdict']} (no decipherment claims)")
