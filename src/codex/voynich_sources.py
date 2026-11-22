@@ -159,6 +159,9 @@ def blank_assignments(atlas: dict[str, Any], folios: list[str]) -> dict[str, Any
     """Make empty observation sheets; withhold interpretive hypotheses."""
     if atlas.get("schema_version") != SCHEMA:
         raise AtlasError("Not a VGVE folio atlas")
+    unsigned = {key: value for key, value in atlas.items() if key != "receipt_sha256"}
+    if atlas.get("receipt_sha256") != hashlib.sha256(_canonical(unsigned)).hexdigest():
+        raise AtlasError("Atlas receipt integrity check failed")
     if not folios:
         raise AtlasError("Specify one or more --folio values")
     index: dict[str, list[dict[str, Any]]] = {}
@@ -167,10 +170,14 @@ def blank_assignments(atlas: dict[str, Any], folios: list[str]) -> dict[str, Any
             key = canvas["folio_key"]
             index.setdefault(key, []).append(canvas)
     assignments = []
+    selected: set[str] = set()
     for requested in folios:
         key = requested.lower().strip()
         if not key.startswith("f"):
             key = f"f{key}"
+        if key in selected:
+            raise AtlasError(f"Duplicate requested folio: {key}")
+        selected.add(key)
         matches = index.get(key, [])
         if len(matches) != 1:
             raise AtlasError(f"{key} has {len(matches)} unique, verifiable canvas mappings")
@@ -190,8 +197,6 @@ def blank_assignments(atlas: dict[str, Any], folios: list[str]) -> dict[str, Any
                 "status": "UNANNOTATED",
             }
         )
-    if len(set(folios)) != len(folios):
-        raise AtlasError("Do not request duplicate folios")
     result = {
         "schema_version": ASSIGNMENT_SCHEMA,
         "catalog_url": CATALOG_URL,
