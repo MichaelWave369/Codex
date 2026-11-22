@@ -55,13 +55,20 @@ python -m codex.voynich_review blank protocol.json --reviewer analyst-b --out b.
    `FLOW`, `CYCLE`, `RETURN`, etc. `NO_PATTERN` and `UNDECIDED`
    are allowed: don't force a meaning when there isn't one.
 5. Each reviewer must edit `blinding_asserted` to `true` **only if they genuinely
-   worked independently without seeing the preferred theory**, set
-   `status` to `COMPLETE`, and recompute the JSON receipt after edits. The
-   program checks the assertion but cannot independently verify honesty.
-6. Compare the two completed, receipt-valid reviews:
+   worked independently without seeing the preferred theory**, and set
+   `status` to `COMPLETE`. The program checks the assertion but cannot
+   independently verify honesty. Save those edited drafts separately.
+6. Validate and seal each completed review against the frozen protocol:
 
 ```bash
-python -m codex.voynich_review score protocol.json a.json b.json --out agreement.json
+python -m codex.voynich_review seal protocol.json a_edited.json --out a_sealed.json
+python -m codex.voynich_review seal protocol.json b_edited.json --out b_sealed.json
+```
+
+7. Compare the two completed, receipt-valid reviews:
+
+```bash
+python -m codex.voynich_review score protocol.json a_sealed.json b_sealed.json --out agreement.json
 ```
 
 The current SHA receipt is a tamper-evident checksum **only** and is *not*
