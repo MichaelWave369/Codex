@@ -19,7 +19,10 @@ SCHEMA = "vgve-folio-atlas/0.1"
 ASSIGNMENT_SCHEMA = "vgve-blind-annotation/0.1"
 MANIFEST_URL = "https://collections.library.yale.edu/manifests/2002046"
 CATALOG_URL = "https://collections.library.yale.edu/catalog/2002046"
-FOLIO_PATTERN = re.compile(r"(?<![A-Za-z0-9])(?:f(?:olio)?[.\s:-]*)?(\d{1,3}[rv](?:[1-6])?)(?![A-Za-z0-9])", re.I)
+FOLIO_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9])(?:f(?:olio)?[.\s:-]*)?(\d{1,3}[rv](?:[1-6])?)(?![A-Za-z0-9])",
+    re.I,
+)
 
 
 class AtlasError(ValueError):
@@ -227,7 +230,9 @@ def main() -> None:
     ingest = subparsers.add_parser("index", help="Index a previously downloaded Yale IIIF JSON")
     ingest.add_argument("manifest", type=Path)
     ingest.add_argument("--out", type=Path, required=True)
-    blind = subparsers.add_parser("assign", help="Generate hypothesis-blind blank annotation sheets")
+    blind = subparsers.add_parser(
+        "assign", help="Generate hypothesis-blind blank annotation sheets"
+    )
     blind.add_argument("atlas", type=Path)
     blind.add_argument("--folio", action="append", required=True)
     blind.add_argument("--out", type=Path, required=True)
