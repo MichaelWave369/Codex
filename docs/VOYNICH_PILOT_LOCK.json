@@ -1,0 +1,24 @@
+{
+  "schema_version": "vgve-pilot-lock/0.1",
+  "study_id": "VGVE-PILOT-001",
+  "locked_on_utc_date": "2026-11-22",
+  "verification_workflow": "https://github.com/MichaelWave369/Codex/actions/runs/45076688430",
+  "source_lock_file": "docs/VOYNICH_SOURCE_LOCK.json",
+  "source_manifest_sha256": "317d58fd9ea90392a83d9858a91eada3d0b41416a3c835857dc0154bd123a309",
+  "source_ivtff_sha256": "bf5b6d4ac1e3a51b1847a9c388318d609020441ccd56984c901c32b09beccafc",
+  "preregistered_plan_receipt_sha256": "72e03b36ae3c75fb22deb14def4f6e37742fab3a3509e97256463612baca2167",
+  "eligible_folios": 178,
+  "selected_folios": 32,
+  "heldout_folios": 8,
+  "development_folios": 24,
+  "primary_test": "positive one-sided Spearman correlation between consensus-FLOW 2x2 grid fraction and ZL3b locus count on frozen held-out folios",
+  "permutation_count": 999,
+  "alpha": 0.05,
+  "experimental_outcome": "NONE: INDEPENDENT VISUAL REVIEWS NOT YET COLLECTED",
+  "boundaries": [
+    "The selection was frozen prior to visual annotation.",
+    "This locked plan is a small exploratory manuscript layout pilot.",
+    "A match does not decipher Voynich language or validate metaphysical interpretations.",
+    "No source images or transliteration corpus text are republished."
+  ]
+}

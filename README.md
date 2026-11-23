@@ -202,3 +202,15 @@ the manuscript or infer symbolic meaning**.
 A GitHub Actions source probe can fetch live upstream data and emit
 metadata-only artifacts without installing anything locally. Read the
 [Phase 4 protocol](docs/VOYNICH_IVTFF.md) before interpreting results.
+
+### Phase 5: preregistered, source-locked statistical pilot
+
+The optional `codex.voynich_study` module selects a deterministic cohort
+from verified Yale IIIF and ZL 3b IVTFF metadata, freezes a 25% held-out
+folio partition, and declares a single statistical endpoint **before**
+independent image-region annotations. It will not invent observer data.
+
+A [GitHub-hosted preparation workflow](.github/workflows/vgve-study-prereg.yml)
+creates the source-bound study plan and neutral grid protocol without requiring
+local setup. Read the [preregistered pilot design](docs/VOYNICH_PREREGISTERED_PILOT.md)
+for test method, sample-size limitations, and claim boundaries.
