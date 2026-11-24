@@ -90,11 +90,7 @@ def identify(observations: dict) -> list[int]:
             or type(value) is not int
         ):
             raise ValueError("invalid observation")
-    return [
-        o
-        for o in range(8)
-        if all(tile(o)[r][c] == v for (r, c), v in observations.items())
-    ]
+    return [o for o in range(8) if all(tile(o)[r][c] == v for (r, c), v in observations.items())]
 
 
 def coupling(a: int, b: int) -> int:
