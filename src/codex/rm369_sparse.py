@@ -50,6 +50,10 @@ class SparseField:
     def key_bytes(self) -> int:
         return max(1, ((self._nodes - 1).bit_length() + 7) // 8)
 
+    def orientation(self, path: tuple) -> int:
+        """Read a single physical pocket orientation without a snapshot scan."""
+        return self._overrides.get(node_id(self.depth, path), 0)
+
     def set_orientation(self, path: tuple, orientation: int) -> None:
         key = node_id(self.depth, path)
         if type(orientation) is not int or not 0 <= orientation < 8:
