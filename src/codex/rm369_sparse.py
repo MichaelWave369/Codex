@@ -104,19 +104,18 @@ class SparseField:
     def storage(self) -> dict:
         """Logical serialized sizes, not Python heap or measured latency."""
         count = self.changed
+        cells = 9**self.depth
+        value_width = (cells.bit_length() + 7) // 8
+        json_payload = json.dumps(sorted(self._overrides.items()), separators=(",", ":"))
         return {
             "depth": self.depth,
-            "virtual_cells": 9**self.depth,
+            "virtual_cells": cells,
             "orientation_nodes": self._nodes,
             "changed_nodes": count,
             "sparse_snapshot_bytes": len(self.encode()),
             "dense_packed_orientation_bytes": (3 * self._nodes + 7) // 8,
-            "flat_fixed_width_cell_bytes": (
-                9**self.depth * (((9**self.depth).bit_length() + 7) // 8)
-            ),
-            "sparse_json_bytes": len(
-                json.dumps(sorted(self._overrides.items()), separators=(",", ":")).encode()
-            ),
+            "flat_fixed_width_cell_bytes": cells * value_width,
+            "sparse_json_bytes": len(json_payload.encode()),
         }
 
 
