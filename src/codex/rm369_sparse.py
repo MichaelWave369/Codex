@@ -112,12 +112,10 @@ class SparseField:
             "sparse_snapshot_bytes": len(self.encode()),
             "dense_packed_orientation_bytes": (3 * self._nodes + 7) // 8,
             "flat_fixed_width_cell_bytes": (
-                9**self.depth * ((9**self.depth).bit_length() + 7) // 8
+                9**self.depth * (((9**self.depth).bit_length() + 7) // 8)
             ),
             "sparse_json_bytes": len(
-                json.dumps(
-                    sorted(self._overrides.items()), separators=(",", ":")
-                ).encode()
+                json.dumps(sorted(self._overrides.items()), separators=(",", ":")).encode()
             ),
         }
 
