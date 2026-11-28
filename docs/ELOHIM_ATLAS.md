@@ -192,3 +192,42 @@ annotation remain future work.
 Next: add passage-level chronological intervals, distinguish composition
 estimates from surviving witness dates, and retain uncertainty rather
 than impose a precise cross-tradition timeline.
+
+## Phase 6: chronological atlas
+
+```bash
+python -m codex.elohim_chronology timeline
+python -m codex.elohim_chronology show john-nhc2
+python -m codex.elohim_chronology compare atrahasis-morgan genesis-priestly
+python -m codex.elohim_chronology compare deut-4q37 john-nhc2
+```
+
+Nine source-scoped dating records distinguish manuscript dates, competing
+composition models, broad author context and related literary attestation.
+Eight have inclusive approximate bounds; the date of 4Q37 remains null
+because the retrieved catalog page did not expose it. Signed historical
+years use -1 for 1 BCE and 1 for 1 CE, with no year zero. Approximate
+catalog bounds are preserved rather than converted to exact dates.
+The intervals are not probability distributions.
+
+Yale Bible Study discusses competing dates for the Yahwist strand and an
+exilic or later Priestly model. Century bounds are coarse working
+annotations, not exact dates asserted by that source. The Morgan Atraḫasis
+record uses a catalog excerpt (direct page retrieval returned 403).
+The Aleppo Baal tablet range reflects that particular catalog, not a
+consensus date of composition. The 4CARE catalog identifies Nag Hammadi
+Codex II as TM 107742 and gives relative bounds 300–399 CE. The
+Irenaeus-related attestation is separate from that physical witness;
+it does not date the precise wording of any surviving recension.
+Author context for Philo is not a dated copy of On the Creation.
+Region labels are contextual locations or findspots, not proven routes.
+
+The engine reports before, after, overlap or unknown, with date kinds
+visible. Temporal order alone cannot establish transmission, the origin
+of an idea, shared identity or the number of Genesis addressees.
+No geographic routes, age of oral traditions or manuscript readings
+are inferred. Unknown dates remain separate from the ordered timeline.
+
+Next: freeze a source and annotation protocol for statistical comparison,
+define negative controls, and prohibit significance claims from the
+existing purposive seed alone.
