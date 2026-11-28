@@ -154,3 +154,41 @@ Future statistical work requires independent annotations, a defined sampling
 frame, preregistered hypotheses, and correction for multiple comparisons.
 Reference links were checked via indexed source excerpts; manuscript images
 and full critical apparatus were not independently verified.
+
+## Phase 5: ordered creation-process comparison
+
+```bash
+python -m codex.elohim_process list
+python -m codex.elohim_process show enki-ninmah
+python -m codex.elohim_process compare genesis-1 genesis-2
+python -m codex.elohim_process compare enki-ninmah genesis-2 --narrated-only
+```
+
+Five passage-scoped accounts preserve the order and repetition of curated
+annotations. Each step has a stage, actor, original passage locator, summary
+and mode (proposed or narrated). The sequence is a reading annotation, not
+an assertion about physical events or a reconstruction of a lost manuscript.
+Genesis 1 and Genesis 2 remain separate. Enki and Ninmah retains the
+instructions and acknowledges fragmentary material after lines 24–37;
+it does not convert instructions into completed actions. Atraḫasis uses
+the SEAL composite with variants and is not a single manuscript transcription.
+The long Apocryphon of John is later reception literature.
+
+The comparison returns both ordered sequences, shared and unique category
+sets, and equality of the order of shared categories (including repeats).
+The optional narrated-only filter excludes proposed steps from comparison
+but retains complete records for inspection. Equality is descriptive only;
+it does not establish historical dependence. A missing stage indicates no
+annotation in this selected passage, not absence in the entire tradition.
+There is no inferred count of Genesis addressees, universal chronology,
+or biological mechanism.
+
+Source editions consulted: Sefaria Genesis 1:26–28 and 2:7–15;
+Oxford ETCSL 1.1.2; SEAL Atraḫasis I; indexed excerpts of the
+Waldstein–Wisse long Apocryphon of John (direct page retrieval failed
+during review). Independent manuscript transcription and independent
+annotation remain future work.
+
+Next: add passage-level chronological intervals, distinguish composition
+estimates from surviving witness dates, and retain uncertainty rather
+than impose a precise cross-tradition timeline.
