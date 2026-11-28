@@ -11,9 +11,7 @@ RECORDS = (
         "url": "https://classic.net.bible.org/passage.php?passage=Gen+1%3A26",
         "relation": "anchor",
         "motifs": ["plural-declaration", "divine-likeness"],
-        "observation": (
-            "First-person plural speech in 1:26; singular creation verb in 1:27."
-        ),
+        "observation": ("First-person plural speech in 1:26; singular creation verb in 1:27."),
         "count": None,
         "count_scope": "participants addressed in 1:26",
         "limit": "No addressee is named or counted; speech does not prove joint agency.",
