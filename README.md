@@ -214,3 +214,16 @@ A [GitHub-hosted preparation workflow](.github/workflows/vgve-study-prereg.yml)
 creates the source-bound study plan and neutral grid protocol without requiring
 local setup. Read the [preregistered pilot design](docs/VOYNICH_PREREGISTERED_PILOT.md)
 for test method, sample-size limitations, and claim boundaries.
+
+## Elohim creation atlas (research pilot)
+
+A local-first, source-anchored comparative registry distinguishes textual observations,
+manuscript variants, cultural parallels and later interpretations of creation narratives.
+Unknown counts remain unknown; motif overlap does not establish common identity.
+
+```bash
+python -m codex.elohim_atlas list
+python -m codex.elohim_atlas compare genesis-1 apocryphon-john
+```
+
+See [the research protocol](docs/ELOHIM_ATLAS.md).
