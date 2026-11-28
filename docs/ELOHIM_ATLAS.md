@@ -85,3 +85,37 @@ The Hebrew readings are reported lexical forms, not diplomatic transcriptions.
 Next: extend to the Genesis 3:22 and 11:7 plural passages, Isaiah 6:8,
 and Genesis 5:1–3 parentage parallels; obtain edition-level anchors and
 independent transcription review before expanding to cross-cultural entity graphs.
+
+## Phase 3: source-scoped relationship graph
+
+```bash
+python -m codex.elohim_graph export
+python -m codex.elohim_graph neighbors elohim
+python -m codex.elohim_graph neighbors namma
+python -m codex.elohim_graph --analogies export
+```
+
+The pilot exports 21 nodes across four traditions, 18 textual relationships,
+and two optional comparative analogies. Node kinds distinguish narrative
+entities, collectives, titles and lexical terms. Edges carry a passage locator,
+a reference URL and a status. The source URLs are reference editions or
+scholarly discussions, not independently verified manuscript transcriptions.
+The Ugaritic edge cites a scholarly discussion of KTU 1.4 VI 46. Analogy edges
+identify both passages; consult the corresponding textual edges for the
+other reference edition.
+
+For example, Psalm 82 uses Elohim of both its presiding figure and the
+assembly; connecting them to a lexical node is not an assertion that they
+are identical. Exodus 6:2–3 and Genesis 14:22 supply context-specific title
+relationships, not proof of an invariant historical identity across cultures.
+The Sumerian and Gnostic creation relationships remain distinct.
+
+Neighbor queries return direct edges only. The graph never resolves a shared
+title into a common entity, performs transitive identity inference, or assigns
+an identity or count to the addressees of Genesis 1:26. Analogies are
+excluded by default and opt in explicitly. They are annotations, not proof
+of dependence. The graph is selective, not a complete pantheon or a claim
+about the historical existence of the figures.
+
+Next: attach explicitly scoped numerical claims to passages and editions;
+distinguish group size, cosmological structure and symbolic numbers.
