@@ -119,3 +119,38 @@ about the historical existence of the figures.
 
 Next: attach explicitly scoped numerical claims to passages and editions;
 distinguish group size, cosmological structure and symbolic numbers.
+
+## Phase 4: numerical evidence registry
+
+```bash
+python -m codex.elohim_numbers list
+python -m codex.elohim_numbers match 7
+python -m codex.elohim_numbers contrast genesis-rest john-long-powers
+python -m codex.elohim_numbers contrast john-short-angels john-long-angels
+```
+
+Nine records retain numerical value (nullable), unit, referent scope, edition,
+passage locator, source URL and basis (explicit, reported reading, doctrinal
+or unknown). The seventh day of Genesis is an ordinal, not a count of beings:
+it serves as a negative control against the seven powers in the long
+Apocryphon of John. Exact matches are descriptive, not significance tests.
+
+The short and long Apocryphon recensions report 360 and 365 angelic beings
+respectively in their accounts of the hierarchy. Preserve each scope; the
+arithmetic difference does not establish that the two count identical groups.
+See the [short](https://www.gnosis.org/naghamm/apocjn-short.html) and
+[long](https://www.gnosis.org/naghamm/apocjn-long.html) translations by
+Waldstein and Wisse. The 70 sons of Athirat entry uses the conventional
+reading of KTU 1.4 VI 46, not a settled census of all Ugaritic gods.
+The [Charles translation of 1 Enoch 6:6](https://openscrollproject.org/app/ancient/1EN-6)
+reports 200 descending Watchers, not creation participants.
+Catholic catechetical paragraphs 253–255 describe three divine persons of
+one God, not three gods or a manuscript count in Genesis.
+
+No count of Genesis 1:26 addressees is supplied by these records. This is a
+small purposive seed, not a representative corpus. No p-values, digit-root
+significance, inferred common identity or historical dependence are produced.
+Future statistical work requires independent annotations, a defined sampling
+frame, preregistered hypotheses, and correction for multiple comparisons.
+Reference links were checked via indexed source excerpts; manuscript images
+and full critical apparatus were not independently verified.
