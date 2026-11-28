@@ -142,8 +142,7 @@ ACCOUNTS = (
         "edition": "SEAL, Atraḫasis I composite",
         "url": "https://seal.huji.ac.il/index.php/node/1515",
         "boundary": (
-            "Composite edition with variants; no separate animation event is "
-            "asserted here."
+            "Composite edition with variants; no separate animation event is asserted here."
         ),
         "steps": [
             {
